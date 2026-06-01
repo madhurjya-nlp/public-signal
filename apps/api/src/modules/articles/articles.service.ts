@@ -7,6 +7,7 @@ import {
   IngestionSource,
 } from '../../common/public-signal/source-registry';
 import { UsersRepository } from '../users/users.repository';
+import { StoriesService } from '../stories/stories.service';
 import { ArticlesRepository } from './articles.repository';
 import { ingestRssSource } from './rss-source-ingestion';
 
@@ -18,6 +19,7 @@ export class ArticlesService {
     private readonly articles: ArticlesRepository,
     private readonly users: UsersRepository,
     private readonly config: ConfigService,
+    private readonly stories: StoriesService,
   ) {}
 
   async getArticle(articleId: string) {
@@ -70,6 +72,7 @@ export class ArticlesService {
       articles: this.articles,
       parser: this.parser,
       limit: 100,
+      assignStory: (article) => this.stories.assignArticle(article),
     });
   }
 }

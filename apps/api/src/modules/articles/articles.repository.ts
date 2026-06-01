@@ -6,6 +6,11 @@ import {
   isInterestCategory,
 } from '../../common/public-signal/categories';
 import { SupabaseService } from '../supabase/supabase.service';
+import {
+  StoriesRepository,
+  StoryArticleInput,
+  StoryMetadata,
+} from '../stories/stories.repository';
 
 interface ArticleQueryRow {
   id: string;
@@ -46,9 +51,14 @@ export interface IngestArticleInput {
   categories: InterestCategory[];
 }
 
+export type PersistedIngestedArticle = StoryArticleInput;
+
 @Injectable()
 export class ArticlesRepository {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly stories?: StoriesRepository,
+  ) {}
 
   async findArticleById(articleId: string): Promise<PublicSignalArticle> {
     const { data, error } = await this.articleQuery()
@@ -61,7 +71,7 @@ export class ArticlesRepository {
       throw new NotFoundException('Article not found');
     }
 
-    return mapArticle(data);
+    return (await this.hydrateStoryMetadata([mapArticle(data)]))[0];
   }
 
   async findFeedForUser(params: {
@@ -82,8 +92,9 @@ export class ArticlesRepository {
       params.interests.filter(isInterestCategory),
     );
 
-    return (data ?? [])
-      .map(mapArticle)
+    const articles = await this.hydrateStoryMetadata((data ?? []).map(mapArticle));
+
+    return articles
       .filter((article) => !votedArticleIds.has(article.id))
       .sort((a, b) => {
         const aPriority = hasInterestMatch(a, interests) ? 0 : 1;
@@ -95,10 +106,13 @@ export class ArticlesRepository {
 
         return dateValue(b.published_at ?? b.created_at) - dateValue(a.published_at ?? a.created_at);
       })
+      .filter(uniqueStoryGroup)
       .slice(0, params.limit ?? 20);
   }
 
-  async upsertIngestedArticle(input: IngestArticleInput): Promise<boolean> {
+  async upsertIngestedArticle(
+    input: IngestArticleInput,
+  ): Promise<PersistedIngestedArticle> {
     const sourceId = await this.upsertSource(input.sourceName);
     const { error } = await this.supabase.admin.from('articles').upsert(
       {
@@ -117,7 +131,66 @@ export class ArticlesRepository {
     );
 
     assertSupabaseSuccess(error);
-    return true;
+    const { data, error: findError } = await this.supabase.admin
+      .from('articles')
+      .select('id, headline, canonical_url, published_at, categories')
+      .eq('canonical_url', input.url)
+      .single<{
+        id: string;
+        headline: string;
+        canonical_url: string;
+        published_at: string | null;
+        categories: string[] | null;
+      }>();
+
+    assertSupabaseSuccess(findError);
+    if (!data) {
+      throw new Error(`Article was not persisted: ${input.url}`);
+    }
+
+    return {
+      id: data.id,
+      title: data.headline,
+      url: data.canonical_url,
+      sourceName: input.sourceName,
+      publishedAt: data.published_at,
+      categories: normalizeCategories(data.categories ?? []),
+    };
+  }
+
+  async findArticlesForStoryBackfill(): Promise<PersistedIngestedArticle[]> {
+    const { data, error } = await this.supabase.admin
+      .from('articles')
+      .select(
+        'id, headline, canonical_url, published_at, categories, source:sources(name)',
+      )
+      .order('published_at', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true })
+      .returns<
+        Array<{
+          id: string;
+          headline: string;
+          canonical_url: string;
+          published_at: string | null;
+          categories: string[] | null;
+          source: { name: string } | Array<{ name: string }> | null;
+        }>
+      >();
+
+    assertSupabaseSuccess(error);
+    return (data ?? []).map((article) => {
+      const source = Array.isArray(article.source)
+        ? article.source[0]
+        : article.source;
+      return {
+        id: article.id,
+        title: article.headline,
+        url: article.canonical_url,
+        sourceName: source?.name ?? 'Unknown Source',
+        publishedAt: article.published_at,
+        categories: normalizeCategories(article.categories ?? []),
+      };
+    });
   }
 
   async existsByCanonicalUrl(url: string): Promise<boolean> {
@@ -155,6 +228,28 @@ export class ArticlesRepository {
       source:sources(name),
       enrichment:article_enrichments(summary, topics)
     `);
+  }
+
+  private async hydrateStoryMetadata(
+    articles: PublicSignalArticle[],
+  ): Promise<PublicSignalArticle[]> {
+    const metadata = this.stories
+      ? await this.stories.findMetadataForArticleIds(
+          articles.map((article) => article.id),
+        )
+      : new Map<string, StoryMetadata>();
+
+    return articles.map((article) => {
+      const story = metadata.get(article.id);
+      return {
+        ...article,
+        story_group_id: story?.storyGroupId ?? null,
+        story_title: story?.storyTitle ?? article.title,
+        related_sources: story?.relatedSources.length
+          ? story.relatedSources
+          : [{ source: article.source, url: article.url }],
+      };
+    });
   }
 
   private async upsertSource(name: string): Promise<string> {
@@ -204,6 +299,14 @@ function mapArticle(row: ArticleQueryRow): PublicSignalArticle {
     summary: row.summary ?? enrichment?.summary ?? null,
     categories,
     created_at: row.created_at,
+    story_group_id: null,
+    story_title: row.headline,
+    related_sources: [
+      {
+        source: source?.name ?? 'Unknown Source',
+        url: row.canonical_url,
+      },
+    ],
   };
 }
 
@@ -226,4 +329,20 @@ function hasInterestMatch(
 
 function dateValue(value: string): number {
   return Number.isNaN(Date.parse(value)) ? 0 : Date.parse(value);
+}
+
+function uniqueStoryGroup(
+  article: PublicSignalArticle,
+  index: number,
+  articles: PublicSignalArticle[],
+): boolean {
+  if (!article.story_group_id) {
+    return true;
+  }
+
+  return (
+    articles.findIndex(
+      (candidate) => candidate.story_group_id === article.story_group_id,
+    ) === index
+  );
 }

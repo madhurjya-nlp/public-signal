@@ -9,7 +9,11 @@ class Article {
     required this.summary,
     required this.categories,
     required this.createdAt,
-  });
+    this.storyGroupId,
+    String? storyTitle,
+    List<RelatedSource>? relatedSources,
+  })  : storyTitle = storyTitle ?? title,
+        relatedSources = relatedSources ?? const [];
 
   factory Article.fromJson(Map<String, dynamic> json) {
     final sourceObject = json['source'];
@@ -37,6 +41,14 @@ class Article {
           .map((category) => category.toString())
           .toList(),
       createdAt: (json['created_at'] ?? json['createdAt']) as String? ?? '',
+      storyGroupId: (json['story_group_id'] ?? json['storyGroupId']) as String?,
+      storyTitle: (json['story_title'] ?? json['storyTitle']) as String?,
+      relatedSources: ((json['related_sources'] ??
+              json['relatedSources'] ??
+              const <dynamic>[]) as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(RelatedSource.fromJson)
+          .toList(),
     );
   }
 
@@ -49,6 +61,9 @@ class Article {
   final String? summary;
   final List<String> categories;
   final String createdAt;
+  final String? storyGroupId;
+  final String storyTitle;
+  final List<RelatedSource> relatedSources;
 
   String get headline => title;
   String get sourceName => source;
@@ -56,6 +71,23 @@ class Article {
   String? get whyItMatters => null;
   List<String> get relatedTopics => categories;
   int? get readingTimeMinutes => null;
+}
+
+class RelatedSource {
+  const RelatedSource({
+    required this.source,
+    required this.url,
+  });
+
+  factory RelatedSource.fromJson(Map<String, dynamic> json) {
+    return RelatedSource(
+      source: json['source'] as String? ?? 'Unknown Source',
+      url: json['url'] as String?,
+    );
+  }
+
+  final String source;
+  final String? url;
 }
 
 final _uuidPattern = RegExp(

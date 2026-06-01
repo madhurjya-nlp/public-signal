@@ -54,6 +54,14 @@ describe('ArticlesRepository', () => {
       summary: 'Summary',
       categories: ['technology'],
       created_at: '2026-06-01T00:00:00.000Z',
+      story_group_id: null,
+      story_title: 'Public signal headline',
+      related_sources: [
+        {
+          source: 'Example Source',
+          url: 'https://example.com/story',
+        },
+      ],
     });
   });
 
@@ -74,7 +82,21 @@ describe('ArticlesRepository', () => {
             };
           }
 
-          return { upsert };
+          return {
+            upsert,
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: {
+                id: '20000000-0000-0000-0000-000000000001',
+                headline: 'Ingested headline',
+                canonical_url: 'https://example.com/ingested',
+                published_at: null,
+                categories: ['technology'],
+              },
+              error: null,
+            }),
+          };
         }),
       },
     } as never);
@@ -119,7 +141,21 @@ describe('ArticlesRepository', () => {
             };
           }
 
-          return { upsert };
+          return {
+            upsert,
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: {
+                id: '20000000-0000-0000-0000-000000000001',
+                headline: 'Duplicate headline',
+                canonical_url: 'https://example.com/duplicate',
+                published_at: null,
+                categories: ['technology'],
+              },
+              error: null,
+            }),
+          };
         }),
       },
     } as never);
@@ -167,5 +203,64 @@ describe('ArticlesRepository', () => {
     await expect(
       repository.existsByCanonicalUrl('https://example.com/story'),
     ).resolves.toBe(true);
+  });
+
+  it('hydrates feed articles with story group related sources', async () => {
+    const repository = new ArticlesRepository({
+      admin: {
+        from: jest.fn((table: string) => {
+          if (table === 'article_votes') {
+            return {
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnThis(),
+              returns: jest.fn().mockResolvedValue({ data: [], error: null }),
+            };
+          }
+
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            returns: jest.fn().mockResolvedValue({
+              data: [articleRow],
+              error: null,
+            }),
+          };
+        }),
+      },
+    } as never, {
+      findMetadataForArticleIds: jest.fn().mockResolvedValue(
+        new Map([
+          [
+            articleRow.id,
+            {
+              storyGroupId: '30000000-0000-0000-0000-000000000001',
+              storyTitle: 'Grouped public signal headline',
+              representativeArticleId: articleRow.id,
+              relatedSources: [
+                { source: 'Example Source', url: articleRow.canonical_url },
+                { source: 'Second Source', url: 'https://example.com/second' },
+              ],
+            },
+          ],
+        ]),
+      ),
+    } as never);
+
+    const items = await repository.findFeedForUser({
+      userId: '10000000-0000-0000-0000-000000000001',
+      interests: ['technology'],
+    });
+
+    expect(items[0]).toEqual(
+      expect.objectContaining({
+        story_group_id: '30000000-0000-0000-0000-000000000001',
+        story_title: 'Grouped public signal headline',
+        related_sources: [
+          { source: 'Example Source', url: articleRow.canonical_url },
+          { source: 'Second Source', url: 'https://example.com/second' },
+        ],
+      }),
+    );
   });
 });

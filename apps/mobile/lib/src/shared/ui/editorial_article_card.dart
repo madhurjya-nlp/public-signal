@@ -66,7 +66,7 @@ class EditorialArticleCard extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        'Source: ${article.source}',
+                        _sourceLabel,
                         style: EditorialTextStyles.metadata,
                       ),
                       if (published != null)
@@ -160,6 +160,20 @@ class EditorialArticleCard extends StatelessWidget {
       return 'No source summary available.';
     }
     return summary;
+  }
+
+  String get _sourceLabel {
+    final sources = article.relatedSources
+        .map((source) => source.source)
+        .where((source) => source.trim().isNotEmpty)
+        .toSet()
+        .toList();
+
+    if (sources.length > 1) {
+      return 'Sources: ${sources.join(' · ')}';
+    }
+
+    return 'Source: ${sources.isNotEmpty ? sources.first : article.source}';
   }
 }
 

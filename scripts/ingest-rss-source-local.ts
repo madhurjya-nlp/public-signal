@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import Parser = require('rss-parser');
 import { ArticlesRepository } from '../apps/api/src/modules/articles/articles.repository';
+import { StoriesRepository } from '../apps/api/src/modules/stories/stories.repository';
+import { StoriesService } from '../apps/api/src/modules/stories/stories.service';
 import {
   assertLocalSupabaseEnvironment,
   ingestRssSource,
@@ -22,13 +24,19 @@ async function main() {
       persistSession: false,
     },
   });
-  const articles = new ArticlesRepository({ admin: supabase } as never);
+  const storiesRepository = new StoriesRepository({ admin: supabase } as never);
+  const stories = new StoriesService(storiesRepository);
+  const articles = new ArticlesRepository(
+    { admin: supabase } as never,
+    storiesRepository,
+  );
   const parser = new Parser({ timeout: LOCAL_INGESTION_TIMEOUT_MS });
   const result = await ingestRssSource({
     source,
     articles,
     parser,
     limit: args.limit,
+    assignStory: (article) => stories.assignArticle(article),
   });
 
   process.stdout.write(

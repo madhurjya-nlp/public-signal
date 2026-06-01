@@ -46,6 +46,9 @@ export async function ingestRssSource(params: {
   articles: RssIngestionRepository;
   parser: RssParserLike;
   limit: number;
+  assignStory?: (
+    article: Awaited<ReturnType<ArticlesRepository['upsertIngestedArticle']>>,
+  ) => Promise<unknown>;
 }): Promise<RssSourceIngestionResult> {
   const feed = await params.parser.parseURL(params.source.url);
   const items = feed.items ?? [];
@@ -69,7 +72,8 @@ export async function ingestRssSource(params: {
 
     try {
       const wasDuplicate = await params.articles.existsByCanonicalUrl(input.url);
-      await params.articles.upsertIngestedArticle(input);
+      const article = await params.articles.upsertIngestedArticle(input);
+      await params.assignStory?.(article);
 
       if (wasDuplicate) {
         result.duplicate += 1;

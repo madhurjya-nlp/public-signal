@@ -5,6 +5,7 @@ import {
   isInterestCategory,
 } from '../../common/public-signal/categories';
 import { VOTE_POINTS } from '../../common/public-signal/votes';
+import { StoriesRepository } from '../stories/stories.repository';
 import { RankingsRepository } from './rankings.repository';
 
 interface ArticleAggregate {
@@ -16,11 +17,20 @@ interface ArticleAggregate {
 
 @Injectable()
 export class RankingsService {
-  constructor(private readonly rankings: RankingsRepository) {}
+  constructor(
+    private readonly rankings: RankingsRepository,
+    private readonly stories: StoriesRepository,
+  ) {}
 
   async getDailyRankings() {
     const { start, end } = getTodayBounds();
     const votes = await this.rankings.findVotesBetween(start, end);
+    const articleRows = votes
+      .map((vote) => (Array.isArray(vote.article) ? vote.article[0] : vote.article))
+      .filter((article): article is NonNullable<typeof article> => Boolean(article));
+    const storyMetadata = await this.stories.findMetadataForArticleIds(
+      articleRows.map((article) => article.id),
+    );
     const aggregates = new Map<string, ArticleAggregate>();
 
     for (const vote of votes) {
@@ -29,19 +39,29 @@ export class RankingsService {
         continue;
       }
 
-      const existing = aggregates.get(articleRow.id) ?? {
+      const story = storyMetadata.get(articleRow.id);
+      const aggregateId = story?.storyGroupId ?? articleRow.id;
+      const source = Array.isArray(articleRow.source)
+        ? articleRow.source[0]?.name ?? 'Unknown Source'
+        : articleRow.source?.name ?? 'Unknown Source';
+      const existing = aggregates.get(aggregateId) ?? {
         article: {
           id: articleRow.id,
-          title: articleRow.headline,
+          title: story?.storyTitle ?? articleRow.headline,
           url: articleRow.canonical_url,
-          source: Array.isArray(articleRow.source)
-            ? articleRow.source[0]?.name ?? 'Unknown Source'
-            : articleRow.source?.name ?? 'Unknown Source',
+          source,
           thumbnail_url: articleRow.thumbnail_url,
           published_at: articleRow.published_at,
           summary: articleRow.summary,
           categories: normalizeCategories(articleRow.categories ?? []),
           created_at: articleRow.created_at,
+          story_group_id: story?.storyGroupId ?? null,
+          story_title: story?.storyTitle ?? articleRow.headline,
+          related_sources: story?.relatedSources.length
+            ? story.relatedSources
+            : [{ source, url: articleRow.canonical_url }],
+          representative_article_id:
+            story?.representativeArticleId ?? articleRow.id,
           rankingScore: 0,
           voteCounts: {
             critical: 0,
@@ -69,7 +89,7 @@ export class RankingsService {
         existing.negativeVotes += 1;
       }
 
-      aggregates.set(articleRow.id, existing);
+      aggregates.set(aggregateId, existing);
     }
 
     const items = Array.from(aggregates.values());

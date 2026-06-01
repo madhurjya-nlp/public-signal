@@ -154,7 +154,7 @@ class _RankingCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Source: ${item.article.source}',
+              _sourceLabel(item),
               style: EditorialTextStyles.metadata,
             ),
             const SizedBox(height: 10),
@@ -173,6 +173,20 @@ class _RankingCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _sourceLabel(RankingItem item) {
+  final sources = item.article.relatedSources
+      .map((source) => source.source)
+      .where((source) => source.trim().isNotEmpty)
+      .toSet()
+      .toList();
+
+  if (sources.length > 1) {
+    return 'Sources: ${sources.join(' · ')}';
+  }
+
+  return 'Source: ${sources.isNotEmpty ? sources.first : item.article.source}';
 }
 
 class _VoteCount extends StatelessWidget {

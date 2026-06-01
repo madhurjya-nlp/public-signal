@@ -8,6 +8,7 @@ import { FeedModule } from './modules/feed/feed.module';
 import { HealthModule } from './modules/health/health.module';
 import { RankingsModule } from './modules/rankings/rankings.module';
 import { SearchModule } from './modules/search/search.module';
+import { StoriesModule } from './modules/stories/stories.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { UsersModule } from './modules/users/users.module';
 import { VotesModule } from './modules/votes/votes.module';
@@ -25,6 +26,7 @@ import { VotesModule } from './modules/votes/votes.module';
     RankingsModule,
     CollectionsModule,
     SearchModule,
+    StoriesModule,
     AssistantModule,
   ],
 })

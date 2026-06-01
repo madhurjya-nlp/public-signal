@@ -16,6 +16,11 @@ export const VoteTypeSchema = z.enum([
   'not_important',
 ]);
 
+export const RelatedSourceSchema = z.object({
+  source: z.string(),
+  url: z.string().url().nullable(),
+});
+
 export const PublicSignalArticleSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
@@ -26,6 +31,9 @@ export const PublicSignalArticleSchema = z.object({
   summary: z.string().nullable(),
   categories: z.array(InterestCategorySchema),
   created_at: z.string().datetime(),
+  story_group_id: z.string().uuid().nullable(),
+  story_title: z.string(),
+  related_sources: z.array(RelatedSourceSchema),
 });
 
 export const FeedResponseSchema = z.object({
@@ -46,6 +54,7 @@ export const VoteCountsSchema = z.object({
 });
 
 export const RankingItemSchema = PublicSignalArticleSchema.extend({
+  representative_article_id: z.string().uuid(),
   rankingScore: z.number().int(),
   voteCounts: VoteCountsSchema,
   totalVotes: z.number().int().nonnegative(),
@@ -59,6 +68,7 @@ export const DailyRankingsResponseSchema = z.object({
 
 export type InterestCategory = z.infer<typeof InterestCategorySchema>;
 export type VoteType = z.infer<typeof VoteTypeSchema>;
+export type RelatedSource = z.infer<typeof RelatedSourceSchema>;
 export type PublicSignalArticle = z.infer<typeof PublicSignalArticleSchema>;
 export type FeedResponse = z.infer<typeof FeedResponseSchema>;
 export type VoteResponse = z.infer<typeof VoteResponseSchema>;

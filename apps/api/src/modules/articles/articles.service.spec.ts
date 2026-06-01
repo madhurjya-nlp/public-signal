@@ -11,6 +11,7 @@ describe('ArticlesService', () => {
       } as never,
       {} as never,
       { get: jest.fn().mockReturnValue('false') } as never,
+      { assignArticle: jest.fn() } as never,
     );
 
     (service as unknown as { parser: { parseURL: jest.Mock } }).parser = {
@@ -64,6 +65,7 @@ describe('ArticlesService', () => {
       { findFeedForUser } as never,
       { getProfile } as never,
       { get: jest.fn() } as never,
+      { assignArticle: jest.fn() } as never,
     );
 
     const feed = await service.getFeed('user-1');

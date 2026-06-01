@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:personal_newspaper/src/app.dart';
 import 'package:personal_newspaper/src/features/splash/public_signal_intro_screen.dart';
+import 'package:personal_newspaper/src/features/rankings/rankings_repository.dart';
+import 'package:personal_newspaper/src/features/rankings/rankings_screen.dart';
 import 'package:personal_newspaper/src/shared/models/article.dart';
 import 'package:personal_newspaper/src/shared/ui/editorial_article_card.dart';
 import 'package:personal_newspaper/src/shared/ui/editorial_bottom_nav.dart';
@@ -69,6 +72,48 @@ void main() {
     expect(selected, 2);
   });
 
+  testWidgets('article card shows Sources for a multi-source story',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: EditorialArticleCard(
+              article: const Article(
+                id: '20000000-0000-0000-0000-000000000001',
+                title: 'Grouped story',
+                url: 'https://example.com/story',
+                source: 'Example Source',
+                thumbnailUrl: null,
+                publishedAt: null,
+                summary: null,
+                categories: ['technology'],
+                createdAt: '2026-06-01T00:00:00.000Z',
+                relatedSources: [
+                  RelatedSource(
+                    source: 'Example Source',
+                    url: 'https://example.com/story',
+                  ),
+                  RelatedSource(
+                    source: 'Second Source',
+                    url: 'https://example.com/second',
+                  ),
+                ],
+              ),
+              isVoting: false,
+              onVote: (_) async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.text('Sources: Example Source · Second Source'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('app shell renders selected tab content above bottom nav',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -114,6 +159,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Profile Body'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rankings screen shows Sources for a multi-source story',
+      (tester) async {
+    const groupedArticle = Article(
+      id: '20000000-0000-0000-0000-000000000001',
+      title: 'Grouped ranked story',
+      url: 'https://example.com/story',
+      source: 'Example Source',
+      thumbnailUrl: null,
+      publishedAt: null,
+      summary: null,
+      categories: ['technology'],
+      createdAt: '2026-06-01T00:00:00.000Z',
+      relatedSources: [
+        RelatedSource(
+          source: 'Example Source',
+          url: 'https://example.com/story',
+        ),
+        RelatedSource(
+          source: 'Second Source',
+          url: 'https://example.com/second',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyRankingsProvider.overrideWith(
+            (ref) async => const DailyRankings(
+              mostImportant: [
+                RankingItem(
+                  article: groupedArticle,
+                  rankingScore: 4,
+                  totalVotes: 2,
+                  critical: 1,
+                  worthKnowing: 1,
+                  notImportant: 0,
+                ),
+              ],
+              mostIgnored: [],
+              mostDivisive: [],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: RankingsScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Sources: Example Source · Second Source'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('intro can be skipped with Continue', (tester) async {
