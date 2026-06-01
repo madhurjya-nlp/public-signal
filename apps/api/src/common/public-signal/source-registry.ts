@@ -130,6 +130,58 @@ export const SOURCE_REGISTRY: IngestionSource[] = [
       'Official RSS directory. Commercial use requires express consent and section feed URLs must be selected explicitly.',
   },
   {
+    id: 'pib-press-releases-english',
+    name: 'Press Information Bureau - Press Releases',
+    kind: 'rss',
+    url: 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1',
+    language: 'en',
+    region: 'india',
+    defaultCategories: ['politics'],
+    enabled: false,
+    approvalStatus: 'candidate',
+    notes:
+      'Official Government of India English press-release RSS feed. Review as a government source before any local-only approval.',
+  },
+  {
+    id: 'indian-express-india',
+    name: 'The Indian Express - India',
+    kind: 'rss',
+    url: 'https://indianexpress.com/section/india/feed/',
+    language: 'en',
+    region: 'india',
+    defaultCategories: ['politics'],
+    enabled: false,
+    approvalStatus: 'candidate',
+    notes:
+      'Official India section RSS feed. Published RSS terms restrict consumption to personal and non-commercial use.',
+  },
+  {
+    id: 'indian-express-assam',
+    name: 'The Indian Express - Assam',
+    kind: 'rss',
+    url: 'https://indianexpress.com/section/north-east-india/assam/feed/',
+    language: 'en',
+    region: 'india-assam',
+    defaultCategories: ['politics'],
+    enabled: false,
+    approvalStatus: 'candidate',
+    notes:
+      'Official Assam section RSS feed. Published RSS terms restrict consumption to personal and non-commercial use.',
+  },
+  {
+    id: 'indian-express-technology',
+    name: 'The Indian Express - Technology',
+    kind: 'rss',
+    url: 'https://indianexpress.com/section/technology/feed/',
+    language: 'en',
+    region: 'india',
+    defaultCategories: ['technology'],
+    enabled: false,
+    approvalStatus: 'candidate',
+    notes:
+      'Official technology section RSS feed. Published RSS terms restrict consumption to personal and non-commercial use.',
+  },
+  {
     id: 'republic-world-rss-directory',
     name: 'Republic World',
     kind: 'rss',
@@ -219,4 +271,3 @@ export function getEnabledApprovedSources(kind?: SourceKind): IngestionSource[] 
     );
   });
 }
-

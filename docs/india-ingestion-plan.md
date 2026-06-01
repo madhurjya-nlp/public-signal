@@ -26,6 +26,10 @@ Initial candidates:
 | India Today | `https://www.indiatoday.in/rss` | License review required | Official RSS page. Its published terms restrict commercial use without express consent. |
 | Republic World | `https://www.republicworld.com/rss` | License review required | Official RSS page with section feeds. |
 | Republic Bharat | `https://www.republicbharat.com/rss` | License review required | Official Hindi RSS page with section feeds. |
+| PIB English press releases | `https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1` | Candidate review only | Official direct RSS endpoint. The local helper currently parses zero items. |
+| The Indian Express - India | `https://indianexpress.com/section/india/feed/` | License review required | Official direct section RSS feed. Published RSS terms restrict consumption to personal and non-commercial use. |
+| The Indian Express - Assam | `https://indianexpress.com/section/north-east-india/assam/feed/` | License review required | Official direct regional RSS feed. Published RSS terms restrict consumption to personal and non-commercial use. |
+| The Indian Express - Technology | `https://indianexpress.com/section/technology/feed/` | License review required | Official direct section RSS feed. Published RSS terms restrict consumption to personal and non-commercial use. |
 
 Implementation rule:
 
@@ -184,6 +188,9 @@ The helper reports:
 - local-only quality classification
 - whether the source is safe to review further
 
+The helper uses a bounded 15-second fetch timeout. A candidate that times out or
+returns no usable item URLs is classified as `broken`.
+
 Quality classifications:
 
 - `good_candidate`: enough items, strong title/URL/date/summary coverage, low
@@ -193,6 +200,23 @@ Quality classifications:
 - `broken`: fetch failed or no usable URLs were parsed.
 
 This score is for developer review only. Do not expose it in the app UI.
+
+## Direct RSS Candidate Review Results
+
+Reviewed locally on June 1, 2026. Every source below remains disabled with
+`approvalStatus: 'candidate'`.
+
+| Source ID | Items parsed | Quality classification | Notes |
+| --- | ---: | --- | --- |
+| `pib-press-releases-english` | 0 | `broken` | The official endpoint fetched successfully but produced no usable RSS items for the current parser. |
+| `indian-express-india` | 200 | `usable_with_limitations` | Titles, URLs, published dates, and URL uniqueness are complete. Summaries and thumbnails are absent. |
+| `indian-express-assam` | 200 | `usable_with_limitations` | Titles, URLs, published dates, and URL uniqueness are complete. Summaries and thumbnails are absent. Review freshness before use because the regional section may update less frequently. |
+| `indian-express-technology` | 200 | `usable_with_limitations` | Titles, URLs, published dates, and URL uniqueness are complete. Summaries and thumbnails are absent. |
+
+Do not permanently approve these feeds yet. For the next strictly local-only
+smoke test, test `indian-express-india` alone. It has the broadest current India
+coverage in this batch and consistent metadata, but its published RSS terms
+still require legal review before any production or commercial use.
 
 ## Approval Checklist Before Enabling a Source
 

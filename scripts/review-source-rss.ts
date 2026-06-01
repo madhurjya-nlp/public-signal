@@ -15,6 +15,8 @@ type SourceQuality =
   | 'poor_candidate'
   | 'broken';
 
+const REVIEW_FETCH_TIMEOUT_MS = 15_000;
+
 interface ReviewResult {
   source_id: string;
   source_name: string;
@@ -60,7 +62,18 @@ async function reviewRssSource(source: IngestionSource): Promise<ReviewResult> {
   const parser = new Parser();
 
   try {
-    const feed = await parser.parseURL(source.url);
+    const response = await fetch(source.url, {
+      headers: {
+        Accept: 'application/rss+xml, application/atom+xml, text/xml;q=0.9, */*;q=0.1',
+      },
+      signal: AbortSignal.timeout(REVIEW_FETCH_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const feed = await parser.parseString(await response.text());
     const items = feed.items ?? [];
     const mapped = items.map((item) => mapRssItem(source, item));
     const urls = mapped
@@ -196,4 +209,3 @@ void main().catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
 });
-

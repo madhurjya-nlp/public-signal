@@ -21,6 +21,10 @@ describe('source registry', () => {
   it('keeps Indian candidate sources disabled until approval', () => {
     const candidateIds = [
       'india-today-rss-directory',
+      'pib-press-releases-english',
+      'indian-express-india',
+      'indian-express-assam',
+      'indian-express-technology',
       'republic-world-rss-directory',
       'republic-bharat-rss-directory',
       'newsonair-home',
