@@ -1,4 +1,5 @@
 import { Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/auth/authenticated-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/authenticated-user.interface';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard';
@@ -14,9 +15,15 @@ export class ArticlesController {
     return this.articles.getFeed(user.id);
   }
 
+  @Throttle({
+    default: {
+      limit: 2,
+      ttl: 60_000,
+    },
+  })
   @Post('ingest')
-  ingest() {
-    return this.articles.ingestConfiguredSources();
+  ingest(@CurrentUser() user: AuthenticatedUser) {
+    return this.articles.triggerManualIngestion(user.id);
   }
 
   @Get(':id')

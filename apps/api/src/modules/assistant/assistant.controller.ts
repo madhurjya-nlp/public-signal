@@ -1,4 +1,5 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/auth/authenticated-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/authenticated-user.interface';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard';
@@ -10,6 +11,12 @@ import { SendMessageDto } from './dto/send-message.dto';
 export class AssistantController {
   constructor(private readonly assistant: AssistantService) {}
 
+  @Throttle({
+    default: {
+      limit: 10,
+      ttl: 60_000,
+    },
+  })
   @Post('messages')
   sendMessage(
     @CurrentUser() user: AuthenticatedUser,
@@ -18,4 +25,3 @@ export class AssistantController {
     return this.assistant.sendMessage(user.id, dto.message);
   }
 }
-

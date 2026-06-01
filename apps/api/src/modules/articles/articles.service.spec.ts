@@ -1,3 +1,4 @@
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
 
 describe('ArticlesService', () => {
@@ -83,5 +84,51 @@ describe('ArticlesService', () => {
       interests: ['technology'],
       limit: 20,
     });
+  });
+
+  it('disables manual ingestion when MANUAL_INGESTION_ENABLED=false', async () => {
+    const service = new ArticlesService(
+      {} as never,
+      {} as never,
+      {
+        get: jest.fn((key: string) => {
+          if (key === 'MANUAL_INGESTION_ENABLED') {
+            return 'false';
+          }
+          return 'development';
+        }),
+      } as never,
+      {} as never,
+    );
+
+    await expect(service.triggerManualIngestion('user-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('restricts production manual ingestion to configured admin users', async () => {
+    const service = new ArticlesService(
+      {} as never,
+      {} as never,
+      {
+        get: jest.fn((key: string) => {
+          if (key === 'NODE_ENV') {
+            return 'production';
+          }
+          if (key === 'MANUAL_INGESTION_ENABLED') {
+            return 'true';
+          }
+          if (key === 'ADMIN_USER_IDS') {
+            return 'admin-1,admin-2';
+          }
+          return undefined;
+        }),
+      } as never,
+      {} as never,
+    );
+
+    await expect(service.triggerManualIngestion('user-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 });

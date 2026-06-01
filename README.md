@@ -88,6 +88,11 @@ GitHub Actions runs on every push to `main` and every pull request targeting `ma
 - Flutter CI runs `flutter pub get`, `flutter analyze`, and `flutter test` in `apps/mobile`.
 - Supabase local smoke tests remain manual and are not part of CI.
 
+## Deployment Config
+
+Production and staging backend flags, CORS requirements, and Flutter build-time
+environment values are documented in `docs/RUNBOOK.md`.
+
 ## Architecture Principles
 
 - The mobile app never talks directly to LLM providers.

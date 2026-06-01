@@ -1,4 +1,5 @@
 import { Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/auth/authenticated-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/authenticated-user.interface';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard';
@@ -9,6 +10,12 @@ import { UserActionsService } from './user-actions.service';
 export class ArticleActionsController {
   constructor(private readonly actions: UserActionsService) {}
 
+  @Throttle({
+    default: {
+      limit: 30,
+      ttl: 60_000,
+    },
+  })
   @Post(':articleId/save')
   saveArticle(
     @CurrentUser() user: AuthenticatedUser,
@@ -17,6 +24,12 @@ export class ArticleActionsController {
     return this.actions.saveArticle(user.id, articleId);
   }
 
+  @Throttle({
+    default: {
+      limit: 30,
+      ttl: 60_000,
+    },
+  })
   @Delete(':articleId/save')
   unsaveArticle(
     @CurrentUser() user: AuthenticatedUser,
@@ -25,6 +38,12 @@ export class ArticleActionsController {
     return this.actions.unsaveArticle(user.id, articleId);
   }
 
+  @Throttle({
+    default: {
+      limit: 30,
+      ttl: 60_000,
+    },
+  })
   @Post(':articleId/skip')
   skipArticle(
     @CurrentUser() user: AuthenticatedUser,

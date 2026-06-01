@@ -1,8 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { parseBooleanFlag } from '../../common/config/runtime-config';
 
 @Injectable()
 export class AssistantService {
+  constructor(private readonly config: ConfigService) {}
+
   async sendMessage(userId: string, message: string) {
+    if (!parseBooleanFlag(this.config.get<string>('ASSISTANT_ENABLED'), false)) {
+      throw new NotFoundException();
+    }
+
     return {
       userId,
       message,
@@ -12,4 +20,3 @@ export class AssistantService {
     };
   }
 }
-

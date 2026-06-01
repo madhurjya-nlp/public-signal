@@ -104,6 +104,42 @@ C:\dev\flutter\bin\flutter.bat analyze
 
 Flutter analysis is skipped if `C:\dev\flutter\bin\flutter.bat` does not exist.
 
+## Environment Contract
+
+### Backend staging and production
+
+Set these explicitly for deployed API environments:
+
+- `NODE_ENV=production`
+- `PORT`
+- `CORS_ORIGIN=https://staging.example.com,https://app.example.com`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RSS_POLLING_ENABLED=false` for the first staging deploy
+- `MANUAL_INGESTION_ENABLED=false`
+- `SEARCH_ENABLED=false`
+- `ASSISTANT_ENABLED=false`
+
+Optional:
+
+- `ADMIN_USER_IDS=<uuid>,<uuid>` if manual ingestion is ever enabled for
+  controlled admin-only use.
+- `SUPABASE_JWT_SECRET` is not required by the current NestJS API runtime, but
+  local Supabase helper scripts still read it from `npx supabase status -o env`.
+
+The Supabase service-role key must remain backend-only. Never expose
+`SUPABASE_SERVICE_ROLE_KEY` to Flutter or any public client build.
+
+### Flutter build-time variables
+
+Set these when building Flutter for web or mobile:
+
+- `API_BASE_URL`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Do not pass service-role credentials to Flutter.
+
 ## Local Story Clustering Seed Test
 
 To verify multi-source story grouping against local Supabase, load the local
@@ -121,6 +157,17 @@ group.
 The command is idempotent: rerunning it does not duplicate article rows or
 story-group links. The generated rows are fake local test data, not production
 content.
+
+## Production Hardening Notes
+
+- `POST /v1/articles/ingest` is intended for controlled operations only. Keep
+  `MANUAL_INGESTION_ENABLED=false` in staging and production unless you also
+  configure `ADMIN_USER_IDS`.
+- Search and assistant placeholder routes are disabled by default through
+  `SEARCH_ENABLED=false` and `ASSISTANT_ENABLED=false`.
+- First staging deploys should keep `RSS_POLLING_ENABLED=false` until feed,
+  rankings, and source monitoring are verified against the staging Supabase
+  project.
 
 ## Future Saved Article Processing
 
@@ -269,7 +316,8 @@ Fix:
 ```
 
 Then call the authenticated ingestion endpoint from a signed-in session or use
-the app after seeded/ingested articles exist.
+one of the local ingestion scripts after explicitly enabling it, or use the app
+after seeded or ingested articles exist.
 
 ### Backend Not Running
 

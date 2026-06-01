@@ -1,4 +1,5 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/auth/authenticated-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/authenticated-user.interface';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard';
@@ -10,6 +11,12 @@ import { VotesService } from './votes.service';
 export class VotesController {
   constructor(private readonly votes: VotesService) {}
 
+  @Throttle({
+    default: {
+      limit: 30,
+      ttl: 60_000,
+    },
+  })
   @Post()
   submitVote(
     @CurrentUser() user: AuthenticatedUser,
@@ -18,4 +25,3 @@ export class VotesController {
     return this.votes.submitVote(user.id, dto);
   }
 }
-

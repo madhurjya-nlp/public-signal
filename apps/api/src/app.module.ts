@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ArticlesModule } from './modules/articles/articles.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
 import { CollectionsModule } from './modules/collections/collections.module';
@@ -18,6 +20,13 @@ import { VotesModule } from './modules/votes/votes.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 100,
+      },
+    ]),
     SupabaseModule,
     HealthModule,
     ArticlesModule,
@@ -30,6 +39,12 @@ import { VotesModule } from './modules/votes/votes.module';
     SearchModule,
     StoriesModule,
     AssistantModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

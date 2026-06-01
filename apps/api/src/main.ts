@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { resolveCorsOrigins } from './common/config/runtime-config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,7 +11,10 @@ async function bootstrap() {
 
   app.use(helmet());
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN')?.split(',') ?? true,
+    origin: resolveCorsOrigins({
+      nodeEnv: config.get<string>('NODE_ENV'),
+      rawCorsOrigin: config.get<string>('CORS_ORIGIN'),
+    }),
     credentials: true,
   });
   app.enableVersioning({
@@ -30,4 +34,3 @@ async function bootstrap() {
 }
 
 void bootstrap();
-
