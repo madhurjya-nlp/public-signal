@@ -144,6 +144,78 @@ Current behavior:
 - Automatic RSS ingestion reads only enabled sources with
   `approvalStatus: 'approved'`.
 
+## Local Source Review Helper
+
+Use the local RSS review helper to test one registry source at a time without
+enabling it and without writing to Supabase.
+
+Command:
+
+```powershell
+cd C:\dev\personal-newspaper
+npm run review:rss-source -- --source-id=<source-id>
+```
+
+Example:
+
+```powershell
+npm run review:rss-source -- --source-id=india-today-rss-directory
+```
+
+The helper reports:
+
+- source id
+- source name
+- URL
+- source kind
+- current `enabled` value
+- current `approvalStatus`
+- fetch success or failure
+- number of parsed items
+- number of items with title
+- number of items with URL
+- number of items with published date
+- number of items with summary
+- number of items with thumbnail
+- unique URL count
+- duplicate URL count
+- default categories
+- example parsed item
+- local-only quality classification
+- whether the source is safe to review further
+
+Quality classifications:
+
+- `good_candidate`: enough items, strong title/URL/date/summary coverage, low
+  duplicates, and usable default category fit.
+- `usable_with_limitations`: parseable and useful, but missing some metadata.
+- `poor_candidate`: too sparse or inconsistent for MVP ingestion.
+- `broken`: fetch failed or no usable URLs were parsed.
+
+This score is for developer review only. Do not expose it in the app UI.
+
+## Approval Checklist Before Enabling a Source
+
+Do not enable a candidate source until all checklist items pass:
+
+- The source URL is official.
+- Terms and copyright posture are reviewed.
+- The source is appropriate for metadata/excerpt ingestion.
+- The source returns enough usable items.
+- URLs are canonical and mostly unique.
+- Titles are consistently present.
+- Published dates are usable or the limitation is accepted.
+- Summaries are present or the limitation is accepted.
+- Missing thumbnails do not break ingestion.
+- Default Public Signal categories are selected intentionally.
+- Language and region metadata are correct.
+- One source has been tested alone before testing another.
+- The source has fixture or unit coverage where practical.
+
+Warning: do not enable all Indian sources at once. Start with one source only,
+preferably Akashvani News / NewsOnAir or DD News after a source-specific adapter
+exists. RSS review currently applies only to registry entries with `kind: 'rss'`.
+
 ### Milestone 2: Approved Indian RSS Feeds
 
 Add approved India Today and Republic feeds through the existing RSS parser.

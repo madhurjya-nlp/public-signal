@@ -3,15 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Parser = require('rss-parser');
 import {
-  InterestCategory,
-  isInterestCategory,
-} from '../../common/public-signal/categories';
-import {
   getEnabledApprovedSources,
   IngestionSource,
 } from '../../common/public-signal/source-registry';
 import { UsersRepository } from '../users/users.repository';
-import { ArticlesRepository, IngestArticleInput } from './articles.repository';
+import { ArticlesRepository } from './articles.repository';
+import { mapRssItem } from './rss-item.mapper';
 
 @Injectable()
 export class ArticlesService {
@@ -73,7 +70,7 @@ export class ArticlesService {
     let skipped = 0;
 
     for (const item of feed.items.slice(0, 100)) {
-      const input = this.mapRssItem(source, item);
+      const input = mapRssItem(source, item);
 
       if (!input) {
         skipped += 1;
@@ -87,97 +84,4 @@ export class ArticlesService {
     return { stored, skipped };
   }
 
-  private mapRssItem(
-    source: IngestionSource,
-    item: Parser.Item,
-  ): IngestArticleInput | null {
-    const title = item.title?.trim();
-    const url = item.link?.trim();
-
-    if (!title || !url) {
-      return null;
-    }
-
-    return {
-      title,
-      url,
-      sourceName: source.name,
-      thumbnailUrl: extractThumbnail(item),
-      publishedAt: item.isoDate ?? parseDate(item.pubDate),
-      summary: extractSummary(item),
-      categories: inferCategories(source, item),
-    };
-  }
-}
-
-function extractSummary(item: Parser.Item): string | null {
-  const rawItem = item as Record<string, unknown>;
-  const raw =
-    item.contentSnippet ??
-    item.summary ??
-    item.content ??
-    rawItem.description;
-
-  if (typeof raw !== 'string') {
-    return null;
-  }
-
-  return raw.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() || null;
-}
-
-function extractThumbnail(item: Parser.Item): string | null {
-  const rawItem = item as Record<string, unknown>;
-  const mediaContent = rawItem['media:content'];
-  const mediaThumbnail = rawItem['media:thumbnail'];
-  const enclosure = item.enclosure;
-
-  if (Array.isArray(mediaContent) && hasMediaUrl(mediaContent[0])) {
-    return mediaContent[0].$.url;
-  }
-
-  if (hasMediaUrl(mediaContent)) {
-    return mediaContent.$.url;
-  }
-
-  if (
-    Array.isArray(mediaThumbnail) &&
-    hasMediaUrl(mediaThumbnail[0])
-  ) {
-    return mediaThumbnail[0].$.url;
-  }
-
-  if (hasMediaUrl(mediaThumbnail)) {
-    return mediaThumbnail.$.url;
-  }
-
-  return enclosure?.url ?? null;
-}
-
-function hasMediaUrl(value: unknown): value is { $: { url: string } } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '$' in value &&
-    typeof (value as { $?: { url?: unknown } }).$?.url === 'string'
-  );
-}
-
-function inferCategories(
-  source: IngestionSource,
-  item: Parser.Item,
-): InterestCategory[] {
-  const itemCategories = (item.categories ?? [])
-    .map((category) => category.trim().toLowerCase())
-    .filter(isInterestCategory);
-
-  return Array.from(new Set([...itemCategories, ...source.defaultCategories]));
-}
-
-function parseDate(value?: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
 }

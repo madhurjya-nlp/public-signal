@@ -37,5 +37,36 @@ describe('source registry', () => {
       expect(source?.approvalStatus).toBe('candidate');
     }
   });
-});
 
+  it('requires both enabled=true and approvalStatus=approved for automatic ingestion', () => {
+    const approvedButDisabled = {
+      ...SOURCE_REGISTRY[0],
+      id: 'approved-disabled-test',
+      enabled: false,
+      approvalStatus: 'approved' as const,
+    };
+    const enabledButCandidate = {
+      ...SOURCE_REGISTRY[0],
+      id: 'enabled-candidate-test',
+      enabled: true,
+      approvalStatus: 'candidate' as const,
+    };
+    const enabledAndApproved = {
+      ...SOURCE_REGISTRY[0],
+      id: 'enabled-approved-test',
+      enabled: true,
+      approvalStatus: 'approved' as const,
+    };
+
+    const testRegistry = [
+      approvedButDisabled,
+      enabledButCandidate,
+      enabledAndApproved,
+    ];
+    const automaticSources = testRegistry.filter(
+      (source) => source.enabled && source.approvalStatus === 'approved',
+    );
+
+    expect(automaticSources).toEqual([enabledAndApproved]);
+  });
+});

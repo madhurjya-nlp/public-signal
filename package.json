@@ -12,6 +12,7 @@
     "build": "npm run build --workspaces --if-present",
     "dev:api": "npm --workspace @personal-newspaper/api run start:dev",
     "lint": "npm run lint --workspaces --if-present",
+    "review:rss-source": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/review-source-rss.ts",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
@@ -20,4 +21,3 @@
     "npm": ">=10.0.0"
   }
 }
-

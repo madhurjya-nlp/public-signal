@@ -102,5 +102,51 @@ describe('ArticlesRepository', () => {
     );
     expect(upsert.mock.calls[0][0]).not.toHaveProperty('id');
   });
-});
 
+  it('keeps duplicate RSS URLs deduped through canonical URL upsert', async () => {
+    const upsert = jest.fn().mockResolvedValue({ error: null });
+    const repository = new ArticlesRepository({
+      admin: {
+        from: jest.fn((table: string) => {
+          if (table === 'sources') {
+            return {
+              upsert: jest.fn().mockReturnThis(),
+              select: jest.fn().mockReturnThis(),
+              single: jest.fn().mockResolvedValue({
+                data: { id: '10000000-0000-0000-0000-000000000001' },
+                error: null,
+              }),
+            };
+          }
+
+          return { upsert };
+        }),
+      },
+    } as never);
+
+    const input = {
+      title: 'Duplicate headline',
+      url: 'https://example.com/duplicate',
+      sourceName: 'Example Source',
+      thumbnailUrl: null,
+      publishedAt: null,
+      summary: null,
+      categories: ['technology' as const],
+    };
+
+    await repository.upsertIngestedArticle(input);
+    await repository.upsertIngestedArticle(input);
+
+    expect(upsert).toHaveBeenCalledTimes(2);
+    expect(upsert).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ canonical_url: 'https://example.com/duplicate' }),
+      { onConflict: 'canonical_url', ignoreDuplicates: true },
+    );
+    expect(upsert).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ canonical_url: 'https://example.com/duplicate' }),
+      { onConflict: 'canonical_url', ignoreDuplicates: true },
+    );
+  });
+});
