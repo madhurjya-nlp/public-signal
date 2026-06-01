@@ -64,4 +64,45 @@ describe('story clustering', () => {
       ),
     ).toBe(false);
   });
+
+  it('clusters the controlled local flood seed headlines but not the unrelated control', () => {
+    const floodStory = {
+      normalized_title: normalizeStoryTitle(
+        'Assam floods disrupt Lakhimpur schools as waters rise',
+      ),
+      latest_published_at: '2026-06-01T08:00:00.000Z',
+      primary_category: 'environment',
+    };
+
+    expect(
+      shouldClusterArticleWithStory(
+        {
+          title: 'Lakhimpur schools disrupted by Assam floods as waters rise',
+          publishedAt: '2026-06-01T09:00:00.000Z',
+          categories: ['environment'],
+        },
+        floodStory,
+      ),
+    ).toBe(true);
+    expect(
+      shouldClusterArticleWithStory(
+        {
+          title: 'Assam floods disrupt Lakhimpur schools as waters rise today',
+          publishedAt: '2026-06-01T10:00:00.000Z',
+          categories: ['environment'],
+        },
+        floodStory,
+      ),
+    ).toBe(true);
+    expect(
+      shouldClusterArticleWithStory(
+        {
+          title: 'Technology students build robotics project in Guwahati',
+          publishedAt: '2026-06-01T10:30:00.000Z',
+          categories: ['technology'],
+        },
+        floodStory,
+      ),
+    ).toBe(false);
+  });
 });

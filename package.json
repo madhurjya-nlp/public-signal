@@ -15,6 +15,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "review:rss-source": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/review-source-rss.ts",
     "stories:backfill-local": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/backfill-story-groups-local.ts",
+    "stories:seed-local": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/seed-story-clustering-local.ts",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

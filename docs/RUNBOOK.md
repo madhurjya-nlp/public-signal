@@ -104,6 +104,24 @@ C:\dev\flutter\bin\flutter.bat analyze
 
 Flutter analysis is skipped if `C:\dev\flutter\bin\flutter.bat` does not exist.
 
+## Local Story Clustering Seed Test
+
+To verify multi-source story grouping against local Supabase, load the local
+Supabase environment variables and run:
+
+```powershell
+npm run stories:seed-local
+```
+
+This local-only command inserts or reuses four fake articles from local test
+sources. Three controlled Assam flood headlines should form one story group
+with multiple sources. A separate robotics article should remain in another
+group.
+
+The command is idempotent: rerunning it does not duplicate article rows or
+story-group links. The generated rows are fake local test data, not production
+content.
+
 ## Common Errors
 
 ### `SUPABASE_URL does not exist`
