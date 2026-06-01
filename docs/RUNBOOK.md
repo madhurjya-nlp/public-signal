@@ -121,6 +121,25 @@ npx supabase start --workdir infra\supabase
 Do not start the backend with plain `npm run dev:api` unless your shell already
 has Supabase env vars loaded.
 
+### `Could not find the table public.profiles in the schema cache`
+
+The local Supabase database does not have the repo migrations applied, or
+PostgREST has not reloaded its schema cache.
+
+For a disposable local development database, reset Supabase from the configured
+workdir:
+
+```powershell
+cd C:\dev\personal-newspaper
+npx supabase db reset --workdir infra\supabase
+```
+
+Warning: this clears local Supabase data. Restart the backend after the reset:
+
+```powershell
+.\scripts\start-backend-local.ps1
+```
+
 ### `Expected 3 parts in JWT; got 1`
 
 The API key being used as a JWT is malformed, usually because local Supabase env
@@ -203,4 +222,3 @@ If it fails:
 ```
 
 If port `3000` is already occupied, stop the old process before restarting.
-

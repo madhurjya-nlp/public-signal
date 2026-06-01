@@ -18,10 +18,10 @@ foreach ($line in $supabaseEnv) {
     $value = $matches[2].Trim('"')
 
     switch ($name) {
-      'SUPABASE_URL' { $env:SUPABASE_URL = $value }
-      'SUPABASE_ANON_KEY' { $env:SUPABASE_ANON_KEY = $value }
-      'SUPABASE_SERVICE_ROLE_KEY' { $env:SUPABASE_SERVICE_ROLE_KEY = $value }
-      'SUPABASE_JWT_SECRET' { $env:SUPABASE_JWT_SECRET = $value }
+      'API_URL' { $env:SUPABASE_URL = $value }
+      'ANON_KEY' { $env:SUPABASE_ANON_KEY = $value }
+      'SERVICE_ROLE_KEY' { $env:SUPABASE_SERVICE_ROLE_KEY = $value }
+      'JWT_SECRET' { $env:SUPABASE_JWT_SECRET = $value }
     }
   }
 }
@@ -45,4 +45,3 @@ if (-not $env:PORT) {
 
 Write-Host 'Starting Public Signal backend on http://localhost:3000 ...'
 npm --workspace @personal-newspaper/api run start:dev
-
