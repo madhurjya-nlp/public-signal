@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers.dart';
 import '../../shared/ui/editorial_theme.dart';
 import '../../shared/ui/halftone_paper_background.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/public_signal_masthead.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -33,64 +34,68 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Scaffold(
       body: HalftonePaperBackground(
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const SizedBox(height: 20),
-              const PublicSignalMasthead(),
-              const SizedBox(height: 18),
-              Text(
-                'Vote on the public importance of today\'s news.',
-                style: EditorialTextStyles.articleBody.copyWith(
-                  color: EditorialColors.mutedInk,
-                ),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                autofillHints: const [AutofillHints.newPassword],
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
+          child: EditorialPage(
+            maxWidth: 520,
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                const SizedBox(height: 20),
+                const PublicSignalMasthead(),
+                const SizedBox(height: 18),
                 Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  'Vote on the public importance of today\'s news.',
+                  style: EditorialTextStyles.articleBody.copyWith(
+                    color: EditorialColors.mutedInk,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  decoration: const InputDecoration(labelText: 'Email'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  autofillHints: const [AutofillHints.newPassword],
+                  decoration: const InputDecoration(labelText: 'Password'),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _isLoading ? null : _submit,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(_isSignIn ? 'Sign in' : 'Create account'),
+                ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () => setState(() {
+                            _isSignIn = !_isSignIn;
+                            _error = null;
+                          }),
+                  child: Text(
+                    _isSignIn
+                        ? 'Need an account? Sign up'
+                        : 'Already have an account? Sign in',
+                  ),
                 ),
               ],
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _isLoading ? null : _submit,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(_isSignIn ? 'Sign in' : 'Create account'),
-              ),
-              TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () => setState(() {
-                          _isSignIn = !_isSignIn;
-                          _error = null;
-                        }),
-                child: Text(
-                  _isSignIn
-                      ? 'Need an account? Sign up'
-                      : 'Already have an account? Sign in',
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -90,29 +90,23 @@ class AppScaffold extends StatelessWidget {
             children: [
               const PublicSignalMasthead(compact: true),
               Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  child: KeyedSubtree(
-                    key: ValueKey(location),
-                    child: child,
-                  ),
-                ),
+                child: child,
+              ),
+              EditorialBottomNav(
+                selectedIndex: selectedIndex,
+                onSelected: (index) {
+                  context.go(
+                    switch (index) {
+                      1 => '/rankings',
+                      2 => '/profile',
+                      _ => '/feed',
+                    },
+                  );
+                },
               ),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: EditorialBottomNav(
-        selectedIndex: selectedIndex,
-        onSelected: (index) {
-          context.go(
-            switch (index) {
-              1 => '/rankings',
-              2 => '/profile',
-              _ => '/feed',
-            },
-          );
-        },
       ),
     );
   }

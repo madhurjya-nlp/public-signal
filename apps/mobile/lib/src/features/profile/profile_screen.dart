@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/error_state.dart';
 import '../onboarding/user_repository.dart';
@@ -33,75 +34,81 @@ class ProfileScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(profileProvider),
       ),
       data: (profile) {
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          children: [
-            Text('Profile', style: EditorialTextStyles.sectionTitle),
-            const SizedBox(height: 14),
-            _ProfileCard(
-              children: [
-                const Text('ACCOUNT', style: EditorialTextStyles.profileLabel),
-                const SizedBox(height: 6),
-                Text(email, style: EditorialTextStyles.articleBody),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _ProfileCard(
-              children: [
-                const Text(
-                  'SELECTED INTERESTS',
-                  style: EditorialTextStyles.profileLabel,
-                ),
-                const SizedBox(height: 10),
-                if (profile.interests.isEmpty)
+        return EditorialPage(
+          maxWidth: 620,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            children: [
+              Text('Profile', style: EditorialTextStyles.sectionTitle),
+              const SizedBox(height: 14),
+              _ProfileCard(
+                children: [
+                  const Text(
+                    'ACCOUNT',
+                    style: EditorialTextStyles.profileLabel,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(email, style: EditorialTextStyles.articleBody),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _ProfileCard(
+                children: [
+                  const Text(
+                    'SELECTED INTERESTS',
+                    style: EditorialTextStyles.profileLabel,
+                  ),
+                  const SizedBox(height: 10),
+                  if (profile.interests.isEmpty)
+                    Text(
+                      'No interests selected yet.',
+                      style: EditorialTextStyles.articleBody.copyWith(
+                        color: EditorialColors.mutedInk,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final interest in profile.interests)
+                          Chip(
+                            label: Text(interest),
+                            backgroundColor: EditorialColors.paperWarm,
+                            side: const BorderSide(color: EditorialColors.rule),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _ProfileCard(
+                children: [
+                  const Text(
+                    'LOCAL DEVELOPMENT',
+                    style: EditorialTextStyles.profileLabel,
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    'No interests selected yet.',
+                    'Indian candidate sources are local-only until approved. Smoke-test articles may appear in this local database without changing production source policy.',
                     style: EditorialTextStyles.articleBody.copyWith(
                       color: EditorialColors.mutedInk,
                     ),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final interest in profile.interests)
-                        Chip(
-                          label: Text(interest),
-                          backgroundColor: EditorialColors.paperWarm,
-                          side: const BorderSide(color: EditorialColors.rule),
-                        ),
-                    ],
                   ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _ProfileCard(
-              children: [
-                const Text(
-                  'LOCAL DEVELOPMENT',
-                  style: EditorialTextStyles.profileLabel,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Indian candidate sources are local-only until approved. Smoke-test articles may appear in this local database without changing production source policy.',
-                  style: EditorialTextStyles.articleBody.copyWith(
-                    color: EditorialColors.mutedInk,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton(
-              onPressed: () async {
-                await ref.read(authRepositoryProvider).signOut();
-                if (context.mounted) {
-                  context.go('/auth');
-                }
-              },
-              child: const Text('Sign out'),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton(
+                onPressed: () async {
+                  await ref.read(authRepositoryProvider).signOut();
+                  if (context.mounted) {
+                    context.go('/auth');
+                  }
+                },
+                child: const Text('Sign out'),
+              ),
+            ],
+          ),
         );
       },
     );

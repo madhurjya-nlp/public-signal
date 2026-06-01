@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 class EditorialColors {
   const EditorialColors._();
 
-  static const paper = Color(0xFFF7F0E1);
-  static const paperLight = Color(0xFFFFFBF1);
-  static const paperWarm = Color(0xFFEEDDC4);
-  static const ink = Color(0xFF1F1A14);
-  static const mutedInk = Color(0xFF75685A);
-  static const rule = Color(0xFFD9C9AE);
-  static const rust = Color(0xFF9D4327);
-  static const saffron = Color(0xFFC47A2C);
-  static const greenInk = Color(0xFF355E46);
+  static const paper = Color(0xFFF4E7D0);
+  static const paperLight = Color(0xFFFFF4DF);
+  static const paperWarm = Color(0xFFFFE8BD);
+  static const ink = Color(0xFF1E1912);
+  static const mutedInk = Color(0xFF574635);
+  static const rule = Color(0xFFD3AD8D);
+  static const rust = Color(0xFF9A4F2F);
+  static const deepMaroon = Color(0xFF5C2318);
+  static const indigoInk = Color(0xFF22324A);
+  static const greenInk = Color(0xFF2F6F68);
+  static const saffron = Color(0xFFD89A24);
+  static const softBlueGray = Color(0xFFB8C7CE);
 }
 
 class EditorialTextStyles {

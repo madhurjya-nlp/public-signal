@@ -111,7 +111,7 @@ class EditorialArticleCard extends StatelessWidget {
                     label: 'Critical',
                     description: 'Major public consequence',
                     enabled: !isVoting,
-                    color: EditorialColors.rust,
+                    color: EditorialColors.deepMaroon,
                     onPressed: () => onVote(VoteType.critical),
                   ),
                   const SizedBox(height: 9),
@@ -119,7 +119,7 @@ class EditorialArticleCard extends StatelessWidget {
                     label: 'Worth Knowing',
                     description: 'Useful public context',
                     enabled: !isVoting,
-                    color: EditorialColors.greenInk,
+                    color: EditorialColors.rust,
                     onPressed: () => onVote(VoteType.worthKnowing),
                   ),
                   const SizedBox(height: 9),
@@ -203,7 +203,9 @@ class _AiBriefPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         color: EditorialColors.paper,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: EditorialColors.rule),
+        border: Border.all(
+          color: EditorialColors.greenInk.withValues(alpha: 0.45),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -213,7 +215,7 @@ class _AiBriefPlaceholder extends StatelessWidget {
             Text(
               'AI brief',
               style: EditorialTextStyles.metadata.copyWith(
-                color: EditorialColors.rust,
+                color: EditorialColors.greenInk,
               ),
             ),
             const SizedBox(height: 7),
@@ -245,7 +247,7 @@ class _EditorialChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dark
-            ? EditorialColors.ink.withValues(alpha: 0.88)
+            ? EditorialColors.indigoInk.withValues(alpha: 0.92)
             : EditorialColors.paperWarm,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
@@ -41,28 +42,34 @@ class RankingsScreen extends ConsumerWidget {
           );
         }
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
-          children: [
-            Text('Daily Rankings', style: EditorialTextStyles.sectionTitle),
-            const SizedBox(height: 6),
-            Text(
-              'A live index of what readers say matters today.',
-              style: EditorialTextStyles.articleBody.copyWith(
-                color: EditorialColors.mutedInk,
+        return EditorialPage(
+          maxWidth: 680,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+            children: [
+              Text('Daily Rankings', style: EditorialTextStyles.sectionTitle),
+              const SizedBox(height: 6),
+              Text(
+                'A live index of what readers say matters today.',
+                style: EditorialTextStyles.articleBody.copyWith(
+                  color: EditorialColors.mutedInk,
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
-            _RankingSection(
-              title: 'Most Important',
-              items: rankings.mostImportant,
-            ),
-            _RankingSection(title: 'Most Ignored', items: rankings.mostIgnored),
-            _RankingSection(
-              title: 'Most Divisive',
-              items: rankings.mostDivisive,
-            ),
-          ],
+              const SizedBox(height: 18),
+              _RankingSection(
+                title: 'Most Important',
+                items: rankings.mostImportant,
+              ),
+              _RankingSection(
+                title: 'Most Ignored',
+                items: rankings.mostIgnored,
+              ),
+              _RankingSection(
+                title: 'Most Divisive',
+                items: rankings.mostDivisive,
+              ),
+            ],
+          ),
         );
       },
     );

@@ -16,44 +16,54 @@ class EditorialBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: EditorialColors.paperLight.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: EditorialColors.rule),
-            boxShadow: [
-              BoxShadow(
-                color: EditorialColors.ink.withValues(alpha: 0.08),
-                blurRadius: 22,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
           child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Row(
-              children: [
-                _NavItem(
-                  label: 'Vote',
-                  symbol: 'V',
-                  selected: selectedIndex == 0,
-                  onTap: () => onSelected(0),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: EditorialColors.paperLight.withValues(alpha: 0.94),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: EditorialColors.rule),
+                boxShadow: [
+                  BoxShadow(
+                    color: EditorialColors.ink.withValues(alpha: 0.08),
+                    blurRadius: 22,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Row(
+                  children: [
+                    _NavItem(
+                      label: 'Vote',
+                      icon: Icons.how_to_vote_outlined,
+                      selectedIcon: Icons.how_to_vote,
+                      selected: selectedIndex == 0,
+                      onTap: () => onSelected(0),
+                    ),
+                    _NavItem(
+                      label: 'Rankings',
+                      icon: Icons.leaderboard_outlined,
+                      selectedIcon: Icons.leaderboard,
+                      selected: selectedIndex == 1,
+                      onTap: () => onSelected(1),
+                    ),
+                    _NavItem(
+                      label: 'Profile',
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person,
+                      selected: selectedIndex == 2,
+                      onTap: () => onSelected(2),
+                    ),
+                  ],
                 ),
-                _NavItem(
-                  label: 'Rankings',
-                  symbol: 'R',
-                  selected: selectedIndex == 1,
-                  onTap: () => onSelected(1),
-                ),
-                _NavItem(
-                  label: 'Profile',
-                  symbol: 'P',
-                  selected: selectedIndex == 2,
-                  onTap: () => onSelected(2),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -65,13 +75,15 @@ class EditorialBottomNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
-    required this.symbol,
+    required this.icon,
+    required this.selectedIcon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final String symbol;
+  final IconData icon;
+  final IconData selectedIcon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -92,14 +104,12 @@ class _NavItem extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                symbol,
-                style: EditorialTextStyles.metadata.copyWith(
-                  color: selected
-                      ? EditorialColors.paperLight
-                      : EditorialColors.rust,
-                  fontSize: 12,
-                ),
+              Icon(
+                selected ? selectedIcon : icon,
+                color: selected
+                    ? EditorialColors.paperLight
+                    : EditorialColors.rust,
+                size: 17,
               ),
               AnimatedSize(
                 duration: const Duration(milliseconds: 160),

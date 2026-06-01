@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
 import '../../shared/ui/editorial_theme.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/halftone_paper_background.dart';
 import '../../shared/ui/public_signal_masthead.dart';
 
@@ -34,71 +35,75 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen> {
     return Scaffold(
       body: HalftonePaperBackground(
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(22),
-            children: [
-              const PublicSignalMasthead(),
-              const SizedBox(height: 22),
-              Text(
-                'Tune your newspaper',
-                style: EditorialTextStyles.sectionTitle,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Choose the public-interest areas you want to evaluate first.',
-                style: EditorialTextStyles.articleBody.copyWith(
-                  color: EditorialColors.mutedInk,
-                ),
-              ),
-              const SizedBox(height: 26),
-              const Text('INTERESTS', style: EditorialTextStyles.metadata),
-              const SizedBox(height: 12),
-              GridView.builder(
-                itemCount: _interests.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.45,
-                ),
-                itemBuilder: (context, index) {
-                  final interest = _interests[index];
-                  final selected = _selected.contains(interest);
-
-                  return _InterestTile(
-                    label: interest,
-                    selected: selected,
-                    onTap: () {
-                      setState(() {
-                        selected
-                            ? _selected.remove(interest)
-                            : _selected.add(interest);
-                      });
-                    },
-                  );
-                },
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 16),
+          child: EditorialPage(
+            maxWidth: 560,
+            child: ListView(
+              padding: const EdgeInsets.all(22),
+              children: [
+                const PublicSignalMasthead(),
+                const SizedBox(height: 22),
                 Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  'Tune your newspaper',
+                  style: EditorialTextStyles.sectionTitle,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Choose the public-interest areas you want to evaluate first.',
+                  style: EditorialTextStyles.articleBody.copyWith(
+                    color: EditorialColors.mutedInk,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                const Text('INTERESTS', style: EditorialTextStyles.metadata),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  itemCount: _interests.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.45,
+                  ),
+                  itemBuilder: (context, index) {
+                    final interest = _interests[index];
+                    final selected = _selected.contains(interest);
+
+                    return _InterestTile(
+                      label: interest,
+                      selected: selected,
+                      onTap: () {
+                        setState(() {
+                          selected
+                              ? _selected.remove(interest)
+                              : _selected.add(interest);
+                        });
+                      },
+                    );
+                  },
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+                const SizedBox(height: 30),
+                FilledButton(
+                  onPressed: _isLoading ? null : _save,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Start voting'),
                 ),
               ],
-              const SizedBox(height: 30),
-              FilledButton(
-                onPressed: _isLoading ? null : _save,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Start voting'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

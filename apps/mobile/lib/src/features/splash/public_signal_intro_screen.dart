@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../shared/ui/editorial_theme.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/halftone_paper_background.dart';
 
 class PublicSignalIntroScreen extends StatefulWidget {
@@ -59,51 +60,56 @@ class _PublicSignalIntroScreenState extends State<PublicSignalIntroScreen> {
         child: SafeArea(
           child: InkWell(
             onTap: _continue,
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Spacer(),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 420),
-                    transitionBuilder: (child, animation) {
-                      final offset = Tween<Offset>(
-                        begin: const Offset(0, 0.08),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(position: offset, child: child),
-                      );
-                    },
-                    child: Text(
-                      _copy[_step],
-                      key: ValueKey(_copy[_step]),
-                      textAlign: TextAlign.center,
-                      style: _step == 0
-                          ? EditorialTextStyles.masthead.copyWith(fontSize: 42)
-                          : EditorialTextStyles.sectionTitle.copyWith(
-                              fontSize: 30,
-                              height: 1.08,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 26),
-                  Center(
-                    child: Text(
-                      'Tap to continue',
-                      style: EditorialTextStyles.metadata.copyWith(
-                        color: EditorialColors.mutedInk,
+            child: EditorialPage(
+              maxWidth: 520,
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 420),
+                      transitionBuilder: (child, animation) {
+                        final offset = Tween<Offset>(
+                          begin: const Offset(0, 0.08),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child:
+                              SlideTransition(position: offset, child: child),
+                        );
+                      },
+                      child: Text(
+                        _copy[_step],
+                        key: ValueKey(_copy[_step]),
+                        textAlign: TextAlign.center,
+                        style: _step == 0
+                            ? EditorialTextStyles.masthead
+                                .copyWith(fontSize: 42)
+                            : EditorialTextStyles.sectionTitle.copyWith(
+                                fontSize: 30,
+                                height: 1.08,
+                              ),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  FilledButton(
-                    onPressed: _continue,
-                    child: const Text('Continue'),
-                  ),
-                ],
+                    const SizedBox(height: 26),
+                    Center(
+                      child: Text(
+                        'Tap to continue',
+                        style: EditorialTextStyles.metadata.copyWith(
+                          color: EditorialColors.mutedInk,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: _continue,
+                      child: const Text('Continue'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -12,46 +12,51 @@ class PublicSignalMasthead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, compact ? 10 : 16, 20, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: EditorialColors.rule),
-              ),
-            ),
-            child: SizedBox(height: 7),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, compact ? 10 : 16, 20, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Expanded(
-                child: Text(
-                  'Public Signal',
-                  style: EditorialTextStyles.masthead,
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: EditorialColors.rule),
+                  ),
                 ),
+                child: SizedBox(height: 7),
               ),
-              Text(
-                'Does this matter?',
-                style: EditorialTextStyles.metadata.copyWith(
-                  color: EditorialColors.rust,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Public Signal',
+                      style: EditorialTextStyles.masthead,
+                    ),
+                  ),
+                  Text(
+                    'Does this matter?',
+                    style: EditorialTextStyles.metadata.copyWith(
+                      color: EditorialColors.rust,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: EditorialColors.rule),
+                  ),
                 ),
+                child: SizedBox(height: 1),
               ),
             ],
           ),
-          const SizedBox(height: 9),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: EditorialColors.rule),
-              ),
-            ),
-            child: SizedBox(height: 1),
-          ),
-        ],
+        ),
       ),
     );
   }

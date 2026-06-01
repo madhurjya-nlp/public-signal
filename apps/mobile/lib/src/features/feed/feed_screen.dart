@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../shared/models/article.dart';
 import '../../shared/ui/editorial_article_card.dart';
+import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
@@ -64,14 +65,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         }
 
         final article = feed.items[_index];
-        return _VotingArticleView(
-          article: article,
-          position: _index + 1,
-          total: feed.items.length,
-          hasPrevious: _previousArticles.isNotEmpty,
-          isVoting: _isVoting,
-          onPrevious: _showPrevious,
-          onVote: _submitVote,
+        return EditorialPage(
+          child: _VotingArticleView(
+            article: article,
+            position: _index + 1,
+            total: feed.items.length,
+            hasPrevious: _previousArticles.isNotEmpty,
+            isVoting: _isVoting,
+            onPrevious: _showPrevious,
+            onVote: _submitVote,
+          ),
         );
       },
     );
