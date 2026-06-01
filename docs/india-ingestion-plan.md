@@ -218,6 +218,45 @@ smoke test, test `indian-express-india` alone. It has the broadest current India
 coverage in this batch and consistent metadata, but its published RSS terms
 still require legal review before any production or commercial use.
 
+## Local-only Candidate Ingestion Smoke Test
+
+Use this command to ingest one reviewed RSS candidate into local Supabase only:
+
+```powershell
+cd C:\dev\personal-newspaper
+npm run ingest:rss-source:local -- --source-id=indian-express-india --limit=20
+```
+
+Purpose:
+
+- Test one reviewed candidate source against the existing local MVP feed,
+  voting, and rankings flow.
+- Preserve source metadata, database-generated article UUIDs, canonical URL
+  deduplication, and default source categories.
+
+Constraints:
+
+- This is not production approval.
+- This does not enable automatic ingestion.
+- This does not affect scheduled ingestion.
+- This does not mutate `enabled`.
+- This does not mutate `approvalStatus`.
+- This requires `SUPABASE_URL` to point to `localhost` or `127.0.0.1`.
+
+Warning: `indian-express-india` must not be approved for production without
+terms and legal review. Its RSS terms appear limited to personal and
+non-commercial use.
+
+Next manual verification:
+
+1. Start local Supabase.
+2. Start the backend.
+3. Run the local candidate ingestion command.
+4. Start Flutter.
+5. Confirm Indian articles appear in the feed.
+6. Vote on an Indian article.
+7. Verify rankings update.
+
 ## Approval Checklist Before Enabling a Source
 
 Do not enable a candidate source until all checklist items pass:

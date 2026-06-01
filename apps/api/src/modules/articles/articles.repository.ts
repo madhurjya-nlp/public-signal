@@ -120,6 +120,17 @@ export class ArticlesRepository {
     return true;
   }
 
+  async existsByCanonicalUrl(url: string): Promise<boolean> {
+    const { data, error } = await this.supabase.admin
+      .from('articles')
+      .select('id')
+      .eq('canonical_url', url)
+      .maybeSingle<{ id: string }>();
+
+    assertSupabaseSuccess(error);
+    return Boolean(data);
+  }
+
   async exists(articleId: string): Promise<boolean> {
     const { data, error } = await this.supabase.admin
       .from('articles')

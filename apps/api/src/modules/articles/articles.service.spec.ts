@@ -3,8 +3,10 @@ import { ArticlesService } from './articles.service';
 describe('ArticlesService', () => {
   it('ingests RSS items, preserves source, and skips items without URL', async () => {
     const upsertIngestedArticle = jest.fn().mockResolvedValue(true);
+    const existsByCanonicalUrl = jest.fn().mockResolvedValue(false);
     const service = new ArticlesService(
       {
+        existsByCanonicalUrl,
         upsertIngestedArticle,
       } as never,
       {} as never,

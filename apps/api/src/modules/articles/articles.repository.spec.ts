@@ -149,4 +149,23 @@ describe('ArticlesRepository', () => {
       { onConflict: 'canonical_url', ignoreDuplicates: true },
     );
   });
+
+  it('checks whether an article exists by canonical URL', async () => {
+    const repository = new ArticlesRepository({
+      admin: {
+        from: jest.fn(() => ({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { id: '20000000-0000-0000-0000-000000000001' },
+            error: null,
+          }),
+        })),
+      },
+    } as never);
+
+    await expect(
+      repository.existsByCanonicalUrl('https://example.com/story'),
+    ).resolves.toBe(true);
+  });
 });

@@ -8,7 +8,7 @@ import {
 } from '../../common/public-signal/source-registry';
 import { UsersRepository } from '../users/users.repository';
 import { ArticlesRepository } from './articles.repository';
-import { mapRssItem } from './rss-item.mapper';
+import { ingestRssSource } from './rss-source-ingestion';
 
 @Injectable()
 export class ArticlesService {
@@ -65,23 +65,11 @@ export class ArticlesService {
   }
 
   private async ingestSource(source: IngestionSource) {
-    const feed = await this.parser.parseURL(source.url);
-    let stored = 0;
-    let skipped = 0;
-
-    for (const item of feed.items.slice(0, 100)) {
-      const input = mapRssItem(source, item);
-
-      if (!input) {
-        skipped += 1;
-        continue;
-      }
-
-      await this.articles.upsertIngestedArticle(input);
-      stored += 1;
-    }
-
-    return { stored, skipped };
+    return ingestRssSource({
+      source,
+      articles: this.articles,
+      parser: this.parser,
+      limit: 100,
+    });
   }
-
 }
