@@ -32,6 +32,10 @@ export interface StoryMetadata {
   storyGroupId: string;
   storyTitle: string;
   representativeArticleId: string | null;
+  representativeSource?: string | null;
+  representativeUrl?: string | null;
+  storyThumbnailUrl?: string | null;
+  latestPublishedAt?: string | null;
   relatedSources: RelatedSource[];
 }
 
@@ -187,15 +191,29 @@ export class StoriesRepository {
           >(),
         this.supabase.admin
           .from('story_group_articles')
-          .select('story_group_id, source, url')
+          .select(
+            'story_group_id, article_id, source, url, article:articles(thumbnail_url, published_at)',
+          )
           .in('story_group_id', groupIds)
-          .returns<Array<{ story_group_id: string; source: string; url: string | null }>>(),
+          .returns<
+            Array<{
+              story_group_id: string;
+              article_id: string;
+              source: string;
+              url: string | null;
+              article:
+                | { thumbnail_url: string | null; published_at: string | null }
+                | Array<{ thumbnail_url: string | null; published_at: string | null }>
+                | null;
+            }>
+          >(),
       ]);
 
     assertSupabaseSuccess(groupsError);
     assertSupabaseSuccess(sourcesError);
     const groupsById = new Map((groups ?? []).map((group) => [group.id, group]));
     const sourcesByGroup = new Map<string, RelatedSource[]>();
+    const sourceRowsByGroup = new Map<string, typeof sources>();
 
     for (const source of sources ?? []) {
       const existing = sourcesByGroup.get(source.story_group_id) ?? [];
@@ -203,11 +221,25 @@ export class StoriesRepository {
         existing.push({ source: source.source, url: source.url });
       }
       sourcesByGroup.set(source.story_group_id, existing);
+      const sourceRows = sourceRowsByGroup.get(source.story_group_id) ?? [];
+      sourceRows.push(source);
+      sourceRowsByGroup.set(source.story_group_id, sourceRows);
     }
 
     return new Map(
       (links ?? []).flatMap((link) => {
         const group = groupsById.get(link.story_group_id);
+        const sourceRows = sourceRowsByGroup.get(link.story_group_id) ?? [];
+        const representative = sourceRows.find(
+          (source) => source.article_id === group?.representative_article_id,
+        );
+        const thumbnail = sourceRows
+          .map((source) => linkedArticle(source.article)?.thumbnail_url ?? null)
+          .find(Boolean);
+        const publishedDates = sourceRows
+          .map((source) => linkedArticle(source.article)?.published_at ?? null)
+          .filter((date): date is string => Boolean(date))
+          .sort();
         return group
           ? [
               [
@@ -216,6 +248,11 @@ export class StoriesRepository {
                   storyGroupId: group.id,
                   storyTitle: group.canonical_title,
                   representativeArticleId: group.representative_article_id,
+                  representativeSource: representative?.source ?? null,
+                  representativeUrl: representative?.url ?? null,
+                  storyThumbnailUrl: thumbnail ?? null,
+                  latestPublishedAt:
+                    publishedDates[publishedDates.length - 1] ?? null,
                   relatedSources: sourcesByGroup.get(group.id) ?? [],
                 },
               ] as const,
@@ -224,4 +261,13 @@ export class StoriesRepository {
       }),
     );
   }
+}
+
+function linkedArticle(
+  article:
+    | { thumbnail_url: string | null; published_at: string | null }
+    | Array<{ thumbnail_url: string | null; published_at: string | null }>
+    | null,
+) {
+  return Array.isArray(article) ? article[0] : article;
 }

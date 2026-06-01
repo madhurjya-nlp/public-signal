@@ -149,6 +149,25 @@ user. The Saved Notebook groups saved clippings for later reading and can
 become a future input surface for editorial or AI processing after source and
 rights review. No AI processing is implemented today.
 
+## Interest-aware Rankings V0
+
+Daily rankings remain vote-based. The scoring formula is unchanged:
+
+- `critical = 3`
+- `worth_knowing = 1`
+- `not_important = -1`
+
+The mobile app requests:
+
+```text
+GET /v1/rankings/daily?scope=my_interests&limit=10
+```
+
+`scope=my_interests` filters ranked stories to the authenticated user's
+selected categories. If the user has no selected interests, rankings fall back
+to the global vote-based result. Save and skip actions do not affect rankings.
+`thumbnail_url` is display metadata only.
+
 ## Common Errors
 
 ### `SUPABASE_URL does not exist`

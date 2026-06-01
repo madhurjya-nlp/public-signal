@@ -7,6 +7,7 @@ import 'package:personal_newspaper/src/features/splash/public_signal_intro_scree
 import 'package:personal_newspaper/src/features/profile/profile_screen.dart';
 import 'package:personal_newspaper/src/features/rankings/rankings_repository.dart';
 import 'package:personal_newspaper/src/features/rankings/rankings_screen.dart';
+import 'package:personal_newspaper/src/features/rankings/ranking_story_card.dart';
 import 'package:personal_newspaper/src/features/saved/saved_notebook_screen.dart';
 import 'package:personal_newspaper/src/features/onboarding/user_repository.dart';
 import 'package:personal_newspaper/src/features/user_actions/user_actions_repository.dart';
@@ -454,6 +455,138 @@ void main() {
     );
   });
 
+  testWidgets(
+      'rankings screen shows segmented toggle and one section at a time',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyRankingsProvider.overrideWith(
+            (ref) async => DailyRankings(
+              mostImportant: [_rankingItem(title: 'Important visible story')],
+              mostIgnored: [_rankingItem(title: 'Ignored hidden story')],
+              mostDivisive: [_rankingItem(title: 'Divisive hidden story')],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: RankingsScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Most Important'), findsOneWidget);
+    expect(find.text('Most Ignored'), findsOneWidget);
+    expect(find.text('Most Divisive'), findsOneWidget);
+    expect(find.text('Important visible story'), findsOneWidget);
+    expect(find.text('Ignored hidden story'), findsNothing);
+    expect(find.text('Divisive hidden story'), findsNothing);
+
+    await tester.tap(find.text('Most Ignored'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ignored hidden story'), findsOneWidget);
+    expect(find.text('Important visible story'), findsNothing);
+
+    await tester.tap(find.text('Most Divisive'));
+    await tester.pumpAndSettle();
+    expect(find.text('Divisive hidden story'), findsOneWidget);
+    expect(find.text('Ignored hidden story'), findsNothing);
+  });
+
+  testWidgets('rankings screen renders at most ten cards', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyRankingsProvider.overrideWith(
+            (ref) async => DailyRankings(
+              mostImportant: [
+                for (var index = 0; index < 12; index++)
+                  _rankingItem(
+                    title: 'Ranked story $index',
+                    id: '20000000-0000-0000-0000-${(index + 1).toString().padLeft(12, '0')}',
+                  ),
+              ],
+              mostIgnored: const [],
+              mostDivisive: const [],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: RankingsScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('#10'), findsOneWidget);
+    expect(find.text('#11'), findsNothing);
+    expect(find.text('Ranked story 10'), findsNothing);
+  });
+
+  testWidgets('ranking card renders thumbnail when available', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RankingStoryCard(
+              rank: 1,
+              item: _rankingItem(
+                title: 'Thumbnail ranked story',
+                thumbnailUrl: 'https://example.com/thumb.jpg',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('Thumbnail ranked story'), findsOneWidget);
+  });
+
+  testWidgets('ranking card renders safe placeholder without thumbnail',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RankingStoryCard(
+              rank: 1,
+              item: _rankingItem(title: 'Placeholder ranked story'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Placeholder ranked story'), findsOneWidget);
+    expect(find.text('Source: Example Source'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rankings screen shows selected section empty state',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyRankingsProvider.overrideWith(
+            (ref) async => DailyRankings(
+              mostImportant: [_rankingItem(title: 'Important visible story')],
+              mostIgnored: const [],
+              mostDivisive: const [],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: RankingsScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Most Ignored'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No ignored stories in your interests yet.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('intro can be skipped with Continue', (tester) async {
     final router = GoRouter(
       initialLocation: '/intro',
@@ -511,3 +644,28 @@ const _analytics = UserAnalytics(
     ),
   ],
 );
+
+RankingItem _rankingItem({
+  required String title,
+  String id = '20000000-0000-0000-0000-000000000001',
+  String? thumbnailUrl,
+}) {
+  return RankingItem(
+    article: Article(
+      id: id,
+      title: title,
+      url: 'https://example.com/$id',
+      source: 'Example Source',
+      thumbnailUrl: thumbnailUrl,
+      publishedAt: '2026-06-02T00:00:00.000Z',
+      summary: null,
+      categories: const ['environment'],
+      createdAt: '2026-06-02T00:00:00.000Z',
+    ),
+    rankingScore: 4,
+    totalVotes: 2,
+    critical: 1,
+    worthKnowing: 1,
+    notImportant: 0,
+  );
+}

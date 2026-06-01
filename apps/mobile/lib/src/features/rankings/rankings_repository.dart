@@ -7,7 +7,9 @@ class RankingsRepository {
   final ApiClient _api;
 
   Future<DailyRankings> getDailyRankings() async {
-    final json = await _api.getJson('/v1/rankings/daily');
+    final json = await _api.getJson(
+      '/v1/rankings/daily?scope=my_interests&limit=10',
+    );
     return DailyRankings.fromJson(json);
   }
 }
@@ -47,6 +49,10 @@ class RankingItem {
     required this.critical,
     required this.worthKnowing,
     required this.notImportant,
+    this.representativeArticleId,
+    this.representativeSource,
+    this.representativeUrl,
+    this.latestPublishedAt,
   });
 
   factory RankingItem.fromJson(Map<String, dynamic> json) {
@@ -58,6 +64,10 @@ class RankingItem {
       critical: counts['critical'] as int? ?? 0,
       worthKnowing: counts['worthKnowing'] as int? ?? 0,
       notImportant: counts['notImportant'] as int? ?? 0,
+      representativeArticleId: json['representative_article_id'] as String?,
+      representativeSource: json['representative_source'] as String?,
+      representativeUrl: json['representative_url'] as String?,
+      latestPublishedAt: json['latest_published_at'] as String?,
     );
   }
 
@@ -67,5 +77,8 @@ class RankingItem {
   final int critical;
   final int worthKnowing;
   final int notImportant;
+  final String? representativeArticleId;
+  final String? representativeSource;
+  final String? representativeUrl;
+  final String? latestPublishedAt;
 }
-

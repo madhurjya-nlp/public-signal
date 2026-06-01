@@ -120,6 +120,9 @@ export const VoteCountsSchema = z.object({
 
 export const RankingItemSchema = PublicSignalArticleSchema.extend({
   representative_article_id: z.string().uuid(),
+  representative_source: z.string(),
+  representative_url: z.string().url(),
+  latest_published_at: z.string().datetime().nullable(),
   rankingScore: z.number().int(),
   voteCounts: VoteCountsSchema,
   totalVotes: z.number().int().nonnegative(),

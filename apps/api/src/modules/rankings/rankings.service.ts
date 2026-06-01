@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { RankingItem } from '@personal-newspaper/contracts';
 import {
   InterestCategory,
@@ -6,6 +6,7 @@ import {
 } from '../../common/public-signal/categories';
 import { VOTE_POINTS } from '../../common/public-signal/votes';
 import { StoriesRepository } from '../stories/stories.repository';
+import { UsersRepository } from '../users/users.repository';
 import { RankingsRepository } from './rankings.repository';
 
 interface ArticleAggregate {
@@ -13,6 +14,14 @@ interface ArticleAggregate {
   positiveVotes: number;
   negativeVotes: number;
   neutralVotes: number;
+  thumbnails: string[];
+  latestPublishedAt: string | null;
+}
+
+interface DailyRankingsOptions {
+  userId?: string;
+  scope?: string;
+  limit?: string;
 }
 
 @Injectable()
@@ -20,9 +29,15 @@ export class RankingsService {
   constructor(
     private readonly rankings: RankingsRepository,
     private readonly stories: StoriesRepository,
+    private readonly users: UsersRepository,
   ) {}
 
-  async getDailyRankings() {
+  async getDailyRankings(options: DailyRankingsOptions = {}) {
+    const limit = parseRankingLimit(options.limit);
+    const interests =
+      options.scope === 'my_interests' && options.userId
+        ? new Set((await this.users.getProfile(options.userId)).interests)
+        : new Set<string>();
     const { start, end } = getTodayBounds();
     const votes = await this.rankings.findVotesBetween(start, end);
     const articleRows = votes
@@ -50,7 +65,7 @@ export class RankingsService {
           title: story?.storyTitle ?? articleRow.headline,
           url: articleRow.canonical_url,
           source,
-          thumbnail_url: articleRow.thumbnail_url,
+          thumbnail_url: story?.storyThumbnailUrl ?? articleRow.thumbnail_url,
           published_at: articleRow.published_at,
           summary: articleRow.summary,
           categories: normalizeCategories(articleRow.categories ?? []),
@@ -62,6 +77,9 @@ export class RankingsService {
             : [{ source, url: articleRow.canonical_url }],
           representative_article_id:
             story?.representativeArticleId ?? articleRow.id,
+          representative_source: story?.representativeSource ?? source,
+          representative_url: story?.representativeUrl ?? articleRow.canonical_url,
+          latest_published_at: story?.latestPublishedAt ?? articleRow.published_at,
           rankingScore: 0,
           voteCounts: {
             critical: 0,
@@ -73,7 +91,23 @@ export class RankingsService {
         positiveVotes: 0,
         negativeVotes: 0,
         neutralVotes: 0,
+        thumbnails: [],
+        latestPublishedAt: story?.latestPublishedAt ?? null,
       };
+
+      if (articleRow.thumbnail_url) {
+        existing.thumbnails.push(articleRow.thumbnail_url);
+        existing.article.thumbnail_url ??= articleRow.thumbnail_url;
+      }
+      existing.latestPublishedAt = latestDate(
+        existing.latestPublishedAt,
+        articleRow.published_at,
+      );
+      existing.article.latest_published_at = existing.latestPublishedAt;
+      existing.article.categories = mergeCategories(
+        existing.article.categories,
+        normalizeCategories(articleRow.categories ?? []),
+      );
 
       existing.article.rankingScore += VOTE_POINTS[vote.vote_type];
       existing.article.totalVotes += 1;
@@ -92,19 +126,21 @@ export class RankingsService {
       aggregates.set(aggregateId, existing);
     }
 
-    const items = Array.from(aggregates.values());
+    const items = Array.from(aggregates.values()).filter((item) =>
+      interests.size === 0 ? true : hasInterestOverlap(item.article.categories, interests),
+    );
 
     return {
       most_important: items
         .map((item) => item.article)
         .filter((item) => item.rankingScore > 0)
         .sort((a, b) => b.rankingScore - a.rankingScore || b.totalVotes - a.totalVotes)
-        .slice(0, 10),
+        .slice(0, limit),
       most_ignored: items
         .map((item) => item.article)
         .filter((item) => item.rankingScore <= 0)
         .sort((a, b) => a.rankingScore - b.rankingScore || b.totalVotes - a.totalVotes)
-        .slice(0, 10),
+        .slice(0, limit),
       most_divisive: items
         .filter(isDivisive)
         .sort(
@@ -113,15 +149,57 @@ export class RankingsService {
             Math.abs(a.article.rankingScore) - Math.abs(b.article.rankingScore),
         )
         .map((item) => item.article)
-        .slice(0, 10),
+        .slice(0, limit),
     };
   }
+}
+
+function parseRankingLimit(rawLimit?: string): number {
+  if (!rawLimit) {
+    return 10;
+  }
+
+  const limit = Number(rawLimit);
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new BadRequestException('limit must be an integer greater than 0');
+  }
+
+  return Math.min(limit, 50);
 }
 
 function normalizeCategories(categories: string[]): InterestCategory[] {
   return categories
     .map((category) => category.trim().toLowerCase())
     .filter(isInterestCategory);
+}
+
+function hasInterestOverlap(
+  categories: string[],
+  interests: Set<string>,
+): boolean {
+  if (interests.size === 0) {
+    return true;
+  }
+
+  return normalizeCategories(categories).some((category) => interests.has(category));
+}
+
+function mergeCategories(
+  current: InterestCategory[],
+  next: InterestCategory[],
+): InterestCategory[] {
+  return Array.from(new Set([...current, ...next]));
+}
+
+function latestDate(current: string | null, candidate: string | null): string | null {
+  if (!candidate) {
+    return current;
+  }
+  if (!current) {
+    return candidate;
+  }
+
+  return Date.parse(candidate) > Date.parse(current) ? candidate : current;
 }
 
 function isDivisive(item: ArticleAggregate): boolean {

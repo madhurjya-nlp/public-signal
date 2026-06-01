@@ -6,17 +6,35 @@ import '../../shared/ui/editorial_page.dart';
 import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
+import 'ranking_story_card.dart';
 import 'rankings_repository.dart';
 
 final dailyRankingsProvider = FutureProvider.autoDispose<DailyRankings>((ref) {
   return ref.watch(rankingsRepositoryProvider).getDailyRankings();
 });
 
-class RankingsScreen extends ConsumerWidget {
+enum RankingTab {
+  important('Most Important'),
+  ignored('Most Ignored'),
+  divisive('Most Divisive');
+
+  const RankingTab(this.label);
+
+  final String label;
+}
+
+class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RankingsScreen> createState() => _RankingsScreenState();
+}
+
+class _RankingsScreenState extends ConsumerState<RankingsScreen> {
+  RankingTab _selected = RankingTab.important;
+
+  @override
+  Widget build(BuildContext context) {
     final rankings = ref.watch(dailyRankingsProvider);
 
     return rankings.when(
@@ -35,15 +53,8 @@ class RankingsScreen extends ConsumerWidget {
             rankings.mostIgnored.isEmpty &&
             rankings.mostDivisive.isEmpty;
 
-        if (isEmpty) {
-          return const EmptyState(
-            title: 'No public signal yet.',
-            message: 'Vote on articles to generate rankings.',
-          );
-        }
-
         return EditorialPage(
-          maxWidth: 680,
+          maxWidth: 700,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
             children: [
@@ -56,18 +67,21 @@ class RankingsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              _RankingSection(
-                title: 'Most Important',
-                items: rankings.mostImportant,
+              _RankingSegmentedControl(
+                selected: _selected,
+                onSelected: (tab) => setState(() => _selected = tab),
               ),
-              _RankingSection(
-                title: 'Most Ignored',
-                items: rankings.mostIgnored,
-              ),
-              _RankingSection(
-                title: 'Most Divisive',
-                items: rankings.mostDivisive,
-              ),
+              const SizedBox(height: 18),
+              if (isEmpty)
+                const EmptyState(
+                  title: 'Your interest-based rankings are still warming up.',
+                  message: 'Vote on articles to generate rankings.',
+                )
+              else
+                _RankingList(
+                  tab: _selected,
+                  items: _itemsForTab(rankings, _selected),
+                ),
             ],
           ),
         );
@@ -76,143 +90,158 @@ class RankingsScreen extends ConsumerWidget {
   }
 }
 
-class _RankingSection extends StatelessWidget {
-  const _RankingSection({
-    required this.title,
-    required this.items,
+class _RankingSegmentedControl extends StatelessWidget {
+  const _RankingSegmentedControl({
+    required this.selected,
+    required this.onSelected,
   });
 
-  final String title;
-  final List<RankingItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title.toUpperCase(), style: EditorialTextStyles.metadata),
-        const SizedBox(height: 9),
-        for (final item in items) ...[
-          _RankingCard(item: item),
-          const SizedBox(height: 12),
-        ],
-        const SizedBox(height: 10),
-      ],
-    );
-  }
-}
-
-class _RankingCard extends StatelessWidget {
-  const _RankingCard({required this.item});
-
-  final RankingItem item;
+  final RankingTab selected;
+  final ValueChanged<RankingTab> onSelected;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: EditorialColors.paperLight,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: EditorialColors.rule),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.article.title,
-                    style: EditorialTextStyles.rankingTitle,
-                  ),
+        padding: const EdgeInsets.all(5),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 520;
+            final children = [
+              for (final tab in RankingTab.values)
+                _SegmentButton(
+                  tab: tab,
+                  selected: selected == tab,
+                  onTap: () => onSelected(tab),
                 ),
-                const SizedBox(width: 12),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: EditorialColors.ink,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Text(
-                      item.rankingScore.toString(),
-                      style: EditorialTextStyles.button.copyWith(
-                        color: EditorialColors.paperLight,
-                      ),
+            ];
+
+            if (compact) {
+              return Column(
+                children: [
+                  for (final child in children)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: child,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _sourceLabel(item),
-              style: EditorialTextStyles.metadata,
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+                ],
+              );
+            }
+
+            return Row(
               children: [
-                _VoteCount(label: 'Critical', value: item.critical),
-                _VoteCount(label: 'Worth Knowing', value: item.worthKnowing),
-                _VoteCount(label: 'Not Important', value: item.notImportant),
-                _VoteCount(label: 'Total', value: item.totalVotes),
+                for (final child in children) Expanded(child: child),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-String _sourceLabel(RankingItem item) {
-  final sources = item.article.relatedSources
-      .map((source) => source.source)
-      .where((source) => source.trim().isNotEmpty)
-      .toSet()
-      .toList();
-
-  if (sources.length > 1) {
-    return 'Sources: ${sources.join(' · ')}';
-  }
-
-  return 'Source: ${sources.isNotEmpty ? sources.first : item.article.source}';
-}
-
-class _VoteCount extends StatelessWidget {
-  const _VoteCount({
-    required this.label,
-    required this.value,
+class _SegmentButton extends StatelessWidget {
+  const _SegmentButton({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
   });
 
-  final String label;
-  final int value;
+  final RankingTab tab;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: EditorialColors.paper,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: EditorialColors.rule),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        decoration: BoxDecoration(
+          color: selected ? EditorialColors.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Text(
-          '$label $value',
-          style: EditorialTextStyles.chip.copyWith(fontSize: 11),
+          tab.label,
+          textAlign: TextAlign.center,
+          style: EditorialTextStyles.button.copyWith(
+            color: selected ? EditorialColors.paperLight : EditorialColors.ink,
+          ),
         ),
       ),
     );
   }
+}
+
+class _RankingList extends StatelessWidget {
+  const _RankingList({
+    required this.tab,
+    required this.items,
+  });
+
+  final RankingTab tab;
+  final List<RankingItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return _RankingEmptyState(tab: tab);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(tab.label.toUpperCase(), style: EditorialTextStyles.metadata),
+        const SizedBox(height: 10),
+        for (final entry in items.take(10).toList().asMap().entries) ...[
+          RankingStoryCard(
+            key: ValueKey('${tab.name}-${entry.value.article.id}'),
+            item: entry.value,
+            rank: entry.key + 1,
+          ),
+          const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
+}
+
+class _RankingEmptyState extends StatelessWidget {
+  const _RankingEmptyState({required this.tab});
+
+  final RankingTab tab;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (tab) {
+      RankingTab.important => const EmptyState(
+          title: 'No important stories in your interests yet.',
+          message: 'Vote on articles to build this signal.',
+        ),
+      RankingTab.ignored => const EmptyState(
+          title: 'No ignored stories in your interests yet.',
+          message: 'Mark articles Not Important to shape this view.',
+        ),
+      RankingTab.divisive => const EmptyState(
+          title: 'No divisive stories in your interests yet.',
+          message: 'Divisive stories appear when readers disagree.',
+        ),
+    };
+  }
+}
+
+List<RankingItem> _itemsForTab(DailyRankings rankings, RankingTab tab) {
+  return switch (tab) {
+    RankingTab.important => rankings.mostImportant,
+    RankingTab.ignored => rankings.mostIgnored,
+    RankingTab.divisive => rankings.mostDivisive,
+  };
 }
