@@ -80,6 +80,14 @@ flutter pub get
 flutter run
 ```
 
+## CI Checks
+
+GitHub Actions runs on every push to `main` and every pull request targeting `main`.
+
+- Node CI runs `npm run typecheck`, `npm --workspace @personal-newspaper/api test`, `npm run lint`, and `npm run build`.
+- Flutter CI runs `flutter pub get`, `flutter analyze`, and `flutter test` in `apps/mobile`.
+- Supabase local smoke tests remain manual and are not part of CI.
+
 ## Architecture Principles
 
 - The mobile app never talks directly to LLM providers.
@@ -88,4 +96,3 @@ flutter run
 - Full article text is not stored by default. Store metadata, canonical URL, summaries, and derived embeddings.
 - LLM providers are swappable through a gateway interface.
 - The primary success metric is saved items per user per week.
-
