@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../ui/editorial_theme.dart';
+
 class ErrorState extends StatelessWidget {
   const ErrorState({
     required this.message,
@@ -20,12 +22,16 @@ class ErrorState extends StatelessWidget {
           children: [
             Text(
               'Something went wrong',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: EditorialTextStyles.sectionTitle,
             ),
             const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: EditorialTextStyles.articleBody.copyWith(
+                color: EditorialColors.mutedInk,
+              ),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onRetry,
@@ -37,4 +43,3 @@ class ErrorState extends StatelessWidget {
     );
   }
 }
-

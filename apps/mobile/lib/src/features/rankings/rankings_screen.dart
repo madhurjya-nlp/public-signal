@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
 import 'rankings_repository.dart';
@@ -18,9 +19,14 @@ class RankingsScreen extends ConsumerWidget {
     final rankings = ref.watch(dailyRankingsProvider);
 
     return rankings.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: Text(
+          'Counting today\'s public signal...',
+          style: EditorialTextStyles.metadata,
+        ),
+      ),
       error: (error, stackTrace) => ErrorState(
-        message: error.toString(),
+        message: 'Daily rankings could not be loaded.',
         onRetry: () => ref.invalidate(dailyRankingsProvider),
       ),
       data: (rankings) {
@@ -30,24 +36,32 @@ class RankingsScreen extends ConsumerWidget {
 
         if (isEmpty) {
           return const EmptyState(
-            title: 'No rankings yet',
-            message: 'Daily rankings appear after people vote on articles.',
+            title: 'No public signal yet.',
+            message: 'Vote on articles to generate rankings.',
           );
         }
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
           children: [
+            Text('Daily Rankings', style: EditorialTextStyles.sectionTitle),
+            const SizedBox(height: 6),
             Text(
-              'Daily Rankings',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              'A live index of what readers say matters today.',
+              style: EditorialTextStyles.articleBody.copyWith(
+                color: EditorialColors.mutedInk,
+              ),
             ),
-            const SizedBox(height: 16),
-            _RankingSection(title: 'Most Important', items: rankings.mostImportant),
+            const SizedBox(height: 18),
+            _RankingSection(
+              title: 'Most Important',
+              items: rankings.mostImportant,
+            ),
             _RankingSection(title: 'Most Ignored', items: rankings.mostIgnored),
-            _RankingSection(title: 'Most Divisive', items: rankings.mostDivisive),
+            _RankingSection(
+              title: 'Most Divisive',
+              items: rankings.mostDivisive,
+            ),
           ],
         );
       },
@@ -73,23 +87,11 @@ class _RankingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 8),
+        Text(title.toUpperCase(), style: EditorialTextStyles.metadata),
+        const SizedBox(height: 9),
         for (final item in items) ...[
-          Card(
-            child: ListTile(
-              title: Text(item.article.title),
-              subtitle: Text(
-                '${item.article.source} · score ${item.rankingScore} · ${item.totalVotes} votes',
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
+          _RankingCard(item: item),
+          const SizedBox(height: 12),
         ],
         const SizedBox(height: 10),
       ],
@@ -97,3 +99,99 @@ class _RankingSection extends StatelessWidget {
   }
 }
 
+class _RankingCard extends StatelessWidget {
+  const _RankingCard({required this.item});
+
+  final RankingItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: EditorialColors.paperLight,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: EditorialColors.rule),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    item.article.title,
+                    style: EditorialTextStyles.rankingTitle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: EditorialColors.ink,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Text(
+                      item.rankingScore.toString(),
+                      style: EditorialTextStyles.button.copyWith(
+                        color: EditorialColors.paperLight,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Source: ${item.article.source}',
+              style: EditorialTextStyles.metadata,
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _VoteCount(label: 'Critical', value: item.critical),
+                _VoteCount(label: 'Worth Knowing', value: item.worthKnowing),
+                _VoteCount(label: 'Not Important', value: item.notImportant),
+                _VoteCount(label: 'Total', value: item.totalVotes),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VoteCount extends StatelessWidget {
+  const _VoteCount({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: EditorialColors.paper,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: EditorialColors.rule),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          '$label $value',
+          style: EditorialTextStyles.chip.copyWith(fontSize: 11),
+        ),
+      ),
+    );
+  }
+}

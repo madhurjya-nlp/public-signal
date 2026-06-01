@@ -1,14 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../shared/models/article.dart';
+import '../../shared/ui/editorial_article_card.dart';
+import '../../shared/ui/editorial_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/error_state.dart';
 import '../votes/votes_repository.dart';
 import 'feed_repository.dart';
 
-final publicSignalFeedProvider = FutureProvider.autoDispose<FeedResponse>((ref) {
+final publicSignalFeedProvider =
+    FutureProvider.autoDispose<FeedResponse>((ref) {
   return ref.watch(feedRepositoryProvider).getFeed();
 });
 
@@ -20,6 +25,7 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
+  final List<Article> _previousArticles = [];
   int _index = 0;
   bool _isVoting = false;
 
@@ -28,19 +34,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final feed = ref.watch(publicSignalFeedProvider);
 
     return feed.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: Text(
+          'Setting the front page...',
+          style: EditorialTextStyles.metadata,
+        ),
+      ),
       error: (error, stackTrace) => ErrorState(
-        message: error.toString(),
+        message:
+            'The feed could not be loaded. Check the backend and try again.',
         onRetry: () => ref.invalidate(publicSignalFeedProvider),
       ),
       data: (feed) {
         if (feed.items.isEmpty || _index >= feed.items.length) {
           return EmptyState(
-            title: 'No more articles',
-            message: 'You have evaluated the available public signals.',
+            title: 'No articles available yet.',
+            message: 'Run local ingestion or broaden your interests.',
             action: FilledButton(
               onPressed: () {
-                setState(() => _index = 0);
+                setState(() {
+                  _index = 0;
+                  _previousArticles.clear();
+                });
                 ref.invalidate(publicSignalFeedProvider);
               },
               child: const Text('Refresh feed'),
@@ -48,11 +63,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           );
         }
 
+        final article = feed.items[_index];
         return _VotingArticleView(
-          article: feed.items[_index],
+          article: article,
           position: _index + 1,
           total: feed.items.length,
+          hasPrevious: _previousArticles.isNotEmpty,
           isVoting: _isVoting,
+          onPrevious: _showPrevious,
           onVote: _submitVote,
         );
       },
@@ -73,12 +91,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           );
 
       if (mounted) {
-        setState(() => _index += 1);
+        setState(() {
+          _previousArticles.add(article);
+          _index += 1;
+        });
       }
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
+          const SnackBar(
+            content: Text('Vote could not be saved. Please try again.'),
+          ),
         );
       }
     } finally {
@@ -87,6 +110,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       }
     }
   }
+
+  void _showPrevious() {
+    if (_previousArticles.isEmpty || _isVoting) {
+      return;
+    }
+
+    setState(() {
+      _previousArticles.removeLast();
+      _index = math.max(0, _index - 1);
+    });
+  }
 }
 
 class _VotingArticleView extends StatelessWidget {
@@ -94,139 +128,66 @@ class _VotingArticleView extends StatelessWidget {
     required this.article,
     required this.position,
     required this.total,
+    required this.hasPrevious,
     required this.isVoting,
+    required this.onPrevious,
     required this.onVote,
   });
 
   final Article article;
   final int position;
   final int total;
+  final bool hasPrevious;
   final bool isVoting;
+  final VoidCallback onPrevious;
   final Future<void> Function(Article article, VoteType voteType) onVote;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
       children: [
-        Text(
-          'Public Signal',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Article $position of $total',
+                style: EditorialTextStyles.metadata,
               ),
-        ),
-        const SizedBox(height: 4),
-        Text('Article $position of $total'),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (article.thumbnailUrl != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.network(
-                      article.thumbnailUrl!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const SizedBox.shrink(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  article.source,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  article.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        height: 1.08,
-                      ),
-                ),
-                if (article.summary != null && article.summary!.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text(article.summary!),
-                ],
-                const SizedBox(height: 18),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final category in article.categories)
-                      Chip(label: Text(category.toString())),
-                  ],
-                ),
-              ],
             ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Does this matter?',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
+            AnimatedOpacity(
+              opacity: hasPrevious ? 1 : 0,
+              duration: const Duration(milliseconds: 160),
+              child: OutlinedButton(
+                onPressed: hasPrevious ? onPrevious : null,
+                child: const Text('Previous'),
               ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        _VoteButton(
-          label: 'Critical',
-          icon: Icons.priority_high,
-          enabled: !isVoting,
-          onPressed: () => onVote(article, VoteType.critical),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          transitionBuilder: (child, animation) {
+            final offset = Tween<Offset>(
+              begin: const Offset(0.05, 0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            );
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(position: offset, child: child),
+            );
+          },
+          child: EditorialArticleCard(
+            key: ValueKey(article.id),
+            article: article,
+            isVoting: isVoting,
+            onVote: (voteType) => onVote(article, voteType),
+          ),
         ),
-        const SizedBox(height: 10),
-        _VoteButton(
-          label: 'Worth Knowing',
-          icon: Icons.check_circle_outline,
-          enabled: !isVoting,
-          onPressed: () => onVote(article, VoteType.worthKnowing),
-        ),
-        const SizedBox(height: 10),
-        _VoteButton(
-          label: 'Not Important',
-          icon: Icons.remove_circle_outline,
-          enabled: !isVoting,
-          onPressed: () => onVote(article, VoteType.notImportant),
-        ),
-        if (isVoting) ...[
-          const SizedBox(height: 16),
-          const Center(child: CircularProgressIndicator()),
-        ],
       ],
     );
   }
 }
-
-class _VoteButton extends StatelessWidget {
-  const _VoteButton({
-    required this.label,
-    required this.icon,
-    required this.enabled,
-    required this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: enabled ? onPressed : null,
-      icon: Icon(icon),
-      label: Text(label),
-    );
-  }
-}
-

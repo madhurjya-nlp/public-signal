@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../ui/editorial_theme.dart';
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     required this.title,
@@ -23,15 +25,15 @@ class EmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: EditorialTextStyles.sectionTitle,
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: EditorialTextStyles.articleBody.copyWith(
+                color: EditorialColors.mutedInk,
+              ),
             ),
             if (action != null) ...[
               const SizedBox(height: 20),
@@ -43,4 +45,3 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-

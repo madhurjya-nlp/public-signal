@@ -4,8 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/feed/feed_screen.dart';
 import 'features/onboarding/interests_screen.dart';
+import 'features/profile/profile_screen.dart';
 import 'features/rankings/rankings_screen.dart';
+import 'features/splash/public_signal_intro_screen.dart';
 import 'features/startup/startup_screen.dart';
+import 'shared/ui/editorial_bottom_nav.dart';
+import 'shared/ui/halftone_paper_background.dart';
+import 'shared/ui/public_signal_masthead.dart';
 import 'theme/app_theme.dart';
 
 class PersonalNewspaperApp extends StatelessWidget {
@@ -37,6 +42,13 @@ final _router = GoRouter(
       path: '/onboarding',
       builder: (context, state) => const InterestsScreen(),
     ),
+    GoRoute(
+      path: '/intro',
+      builder: (context, state) {
+        final next = state.uri.queryParameters['next'] ?? '/feed';
+        return PublicSignalIntroScreen(nextLocation: next);
+      },
+    ),
     ShellRoute(
       builder: (context, state, child) => AppScaffold(child: child),
       routes: [
@@ -47,6 +59,10 @@ final _router = GoRouter(
         GoRoute(
           path: '/rankings',
           builder: (context, state) => const RankingsScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
     ),
@@ -61,28 +77,43 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
+    final selectedIndex = location.startsWith('/rankings')
+        ? 1
+        : location.startsWith('/profile')
+            ? 2
+            : 0;
 
     return Scaffold(
-      body: SafeArea(child: child),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: location.startsWith('/rankings') ? 1 : 0,
-        onDestinationSelected: (index) {
-          context.go(index == 1 ? '/rankings' : '/feed');
+      body: HalftonePaperBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const PublicSignalMasthead(compact: true),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: KeyedSubtree(
+                    key: ValueKey(location),
+                    child: child,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: EditorialBottomNav(
+        selectedIndex: selectedIndex,
+        onSelected: (index) {
+          context.go(
+            switch (index) {
+              1 => '/rankings',
+              2 => '/profile',
+              _ => '/feed',
+            },
+          );
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.how_to_vote_outlined),
-            selectedIcon: Icon(Icons.how_to_vote),
-            label: 'Vote',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.leaderboard_outlined),
-            selectedIcon: Icon(Icons.leaderboard),
-            label: 'Rankings',
-          ),
-        ],
       ),
     );
   }
 }
-

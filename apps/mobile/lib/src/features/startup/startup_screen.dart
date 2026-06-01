@@ -21,7 +21,9 @@ class _StartupScreenState extends ConsumerState<StartupScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+      body: Center(
+        child: Text('Preparing your edition...'),
+      ),
     );
   }
 
@@ -39,7 +41,8 @@ class _StartupScreenState extends ConsumerState<StartupScreen> {
       if (!mounted) {
         return;
       }
-      context.go(profile.interests.isEmpty ? '/onboarding' : '/feed');
+      context
+          .go(profile.interests.isEmpty ? '/onboarding' : '/intro?next=/feed');
     } catch (_) {
       if (mounted) {
         context.go('/onboarding');
@@ -47,4 +50,3 @@ class _StartupScreenState extends ConsumerState<StartupScreen> {
     }
   }
 }
-
