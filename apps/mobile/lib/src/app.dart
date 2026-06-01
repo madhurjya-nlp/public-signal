@@ -6,6 +6,7 @@ import 'features/feed/feed_screen.dart';
 import 'features/onboarding/interests_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/rankings/rankings_screen.dart';
+import 'features/saved/saved_notebook_screen.dart';
 import 'features/splash/public_signal_intro_screen.dart';
 import 'features/startup/startup_screen.dart';
 import 'shared/ui/editorial_bottom_nav.dart';
@@ -48,6 +49,10 @@ final _router = GoRouter(
         final next = state.uri.queryParameters['next'] ?? '/feed';
         return PublicSignalIntroScreen(nextLocation: next);
       },
+    ),
+    GoRoute(
+      path: '/saved-notebook',
+      builder: (context, state) => const SavedNotebookScreen(),
     ),
     ShellRoute(
       builder: (context, state, child) => AppScaffold(child: child),

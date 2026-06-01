@@ -1,0 +1,23 @@
+warning: in the working copy of 'apps/api/src/app.module.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/articles/articles.repository.spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/articles/articles.repository.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/src/core/providers.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/src/features/feed/feed_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/src/features/profile/profile_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/test/article_model_test.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/RUNBOOK.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/contracts/src/schemas/article.ts', LF will be replaced by CRLF the next time Git touches it
+ apps/api/src/app.module.ts                         |   2 [32m+[m
+ .../modules/articles/articles.repository.spec.ts   |  78 [32m+++[m[31m-[m
+ .../src/modules/articles/articles.repository.ts    |  21 [32m+[m[31m-[m
+ apps/mobile/lib/src/core/network/api_client.dart   |  13 [32m+[m[31m-[m
+ apps/mobile/lib/src/core/providers.dart            |   5 [32m+[m
+ apps/mobile/lib/src/features/feed/feed_screen.dart |  93 [32m++++[m[31m-[m
+ .../lib/src/features/profile/profile_screen.dart   | 435 [32m+++++++++++++++++++[m[31m--[m
+ apps/mobile/lib/src/shared/models/article.dart     |   6 [32m+[m
+ .../lib/src/shared/ui/editorial_article_card.dart  |  75 [32m+++[m[31m-[m
+ apps/mobile/test/article_model_test.dart           |  15 [32m+[m
+ apps/mobile/test/editorial_ui_test.dart            |  79 [32m++++[m
+ docs/RUNBOOK.md                                    |  14 [32m+[m
+ packages/contracts/src/schemas/article.ts          |  51 [32m+++[m
+ 13 files changed, 841 insertions(+), 46 deletions(-)

@@ -10,6 +10,7 @@ import { RankingsModule } from './modules/rankings/rankings.module';
 import { SearchModule } from './modules/search/search.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
+import { UserActionsModule } from './modules/user-actions/user-actions.module';
 import { UsersModule } from './modules/users/users.module';
 import { VotesModule } from './modules/votes/votes.module';
 
@@ -24,6 +25,7 @@ import { VotesModule } from './modules/votes/votes.module';
     FeedModule,
     VotesModule,
     RankingsModule,
+    UserActionsModule,
     CollectionsModule,
     SearchModule,
     StoriesModule,

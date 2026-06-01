@@ -27,8 +27,11 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   final List<Article> _previousArticles = [];
+  final Set<String> _savedArticleIds = {};
   int _index = 0;
   bool _isVoting = false;
+  bool _isSaving = false;
+  bool _isSkipping = false;
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +75,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             total: feed.items.length,
             hasPrevious: _previousArticles.isNotEmpty,
             isVoting: _isVoting,
+            isSaving: _isSaving,
+            isSkipping: _isSkipping,
+            isSaved: _savedArticleIds.contains(article.id) || article.isSaved,
             onPrevious: _showPrevious,
             onVote: _submitVote,
+            onToggleSave: _toggleSave,
+            onSkip: _skipArticle,
           ),
         );
       },
@@ -114,8 +122,76 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     }
   }
 
+  Future<void> _toggleSave(Article article) async {
+    if (_isVoting || _isSaving || _isSkipping) {
+      return;
+    }
+
+    final isSaved = _savedArticleIds.contains(article.id) || article.isSaved;
+    setState(() => _isSaving = true);
+
+    try {
+      if (isSaved) {
+        await ref.read(userActionsRepositoryProvider).unsaveArticle(article.id);
+        if (mounted) {
+          setState(() => _savedArticleIds.remove(article.id));
+        }
+      } else {
+        await ref.read(userActionsRepositoryProvider).saveArticle(article.id);
+        if (mounted) {
+          setState(() => _savedArticleIds.add(article.id));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Save state could not be updated.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  Future<void> _skipArticle(Article article) async {
+    if (_isVoting || _isSaving || _isSkipping) {
+      return;
+    }
+
+    setState(() => _isSkipping = true);
+
+    try {
+      await ref.read(userActionsRepositoryProvider).skipArticle(article.id);
+      if (mounted) {
+        setState(() {
+          _previousArticles.add(article);
+          _index += 1;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Skipped. No vote recorded.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Article could not be skipped. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSkipping = false);
+      }
+    }
+  }
+
   void _showPrevious() {
-    if (_previousArticles.isEmpty || _isVoting) {
+    if (_previousArticles.isEmpty || _isVoting || _isSaving || _isSkipping) {
       return;
     }
 
@@ -133,8 +209,13 @@ class _VotingArticleView extends StatelessWidget {
     required this.total,
     required this.hasPrevious,
     required this.isVoting,
+    required this.isSaving,
+    required this.isSkipping,
+    required this.isSaved,
     required this.onPrevious,
     required this.onVote,
+    required this.onToggleSave,
+    required this.onSkip,
   });
 
   final Article article;
@@ -142,8 +223,13 @@ class _VotingArticleView extends StatelessWidget {
   final int total;
   final bool hasPrevious;
   final bool isVoting;
+  final bool isSaving;
+  final bool isSkipping;
+  final bool isSaved;
   final VoidCallback onPrevious;
   final Future<void> Function(Article article, VoteType voteType) onVote;
+  final Future<void> Function(Article article) onToggleSave;
+  final Future<void> Function(Article article) onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -156,14 +242,6 @@ class _VotingArticleView extends StatelessWidget {
               child: Text(
                 'Article $position of $total',
                 style: EditorialTextStyles.metadata,
-              ),
-            ),
-            AnimatedOpacity(
-              opacity: hasPrevious ? 1 : 0,
-              duration: const Duration(milliseconds: 160),
-              child: OutlinedButton(
-                onPressed: hasPrevious ? onPrevious : null,
-                child: const Text('Previous'),
               ),
             ),
           ],
@@ -187,7 +265,13 @@ class _VotingArticleView extends StatelessWidget {
             key: ValueKey(article.id),
             article: article,
             isVoting: isVoting,
+            isSaved: isSaved,
+            isSaving: isSaving,
+            isSkipping: isSkipping,
             onVote: (voteType) => onVote(article, voteType),
+            onToggleSave: () => onToggleSave(article),
+            onSkip: () => onSkip(article),
+            onPrevious: hasPrevious ? onPrevious : null,
           ),
         ),
       ],

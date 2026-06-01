@@ -12,6 +12,8 @@ class Article {
     this.storyGroupId,
     String? storyTitle,
     List<RelatedSource>? relatedSources,
+    this.isSaved = false,
+    this.hasSkipped = false,
   })  : storyTitle = storyTitle ?? title,
         relatedSources = relatedSources ?? const [];
 
@@ -49,6 +51,8 @@ class Article {
           .whereType<Map<String, dynamic>>()
           .map(RelatedSource.fromJson)
           .toList(),
+      isSaved: (json['is_saved'] ?? json['isSaved']) as bool? ?? false,
+      hasSkipped: (json['has_skipped'] ?? json['hasSkipped']) as bool? ?? false,
     );
   }
 
@@ -64,6 +68,8 @@ class Article {
   final String? storyGroupId;
   final String storyTitle;
   final List<RelatedSource> relatedSources;
+  final bool isSaved;
+  final bool hasSkipped;
 
   String get headline => title;
   String get sourceName => source;

@@ -16,7 +16,8 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = Supabase.instance.client.auth.currentSession?.accessToken;
+          final token =
+              Supabase.instance.client.auth.currentSession?.accessToken;
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -61,6 +62,15 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> deleteJson(String path) async {
+    try {
+      final response = await _dio.delete<Object?>(path);
+      return _asMap(response.data);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Map<String, dynamic> _asMap(Object? data) {
     if (data is Map<String, dynamic>) {
       return data;
@@ -88,4 +98,3 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
-

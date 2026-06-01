@@ -7,6 +7,7 @@ import '../features/collections/collections_repository.dart';
 import '../features/feed/feed_repository.dart';
 import '../features/onboarding/user_repository.dart';
 import '../features/rankings/rankings_repository.dart';
+import '../features/user_actions/user_actions_repository.dart';
 import '../features/votes/votes_repository.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
@@ -37,4 +38,8 @@ final votesRepositoryProvider = Provider<VotesRepository>(
 
 final rankingsRepositoryProvider = Provider<RankingsRepository>(
   (ref) => RankingsRepository(ref.watch(apiClientProvider)),
+);
+
+final userActionsRepositoryProvider = Provider<UserActionsRepository>(
+  (ref) => UserActionsRepository(ref.watch(apiClientProvider)),
 );

@@ -11,18 +11,31 @@ class EditorialArticleCard extends StatelessWidget {
     required this.article,
     required this.isVoting,
     required this.onVote,
+    this.isSaved = false,
+    this.isSaving = false,
+    this.isSkipping = false,
+    this.onToggleSave,
+    this.onSkip,
+    this.onPrevious,
     super.key,
   });
 
   final Article article;
   final bool isVoting;
+  final bool isSaved;
+  final bool isSaving;
+  final bool isSkipping;
   final Future<void> Function(VoteType voteType) onVote;
+  final VoidCallback? onToggleSave;
+  final VoidCallback? onSkip;
+  final VoidCallback? onPrevious;
 
   @override
   Widget build(BuildContext context) {
     final category =
         article.categories.isNotEmpty ? article.categories.first : 'signal';
     final published = _formatDate(article.publishedAt);
+    final isBusy = isVoting || isSaving || isSkipping;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -101,6 +114,34 @@ class EditorialArticleCard extends StatelessWidget {
                       ],
                     ),
                   ],
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _SecondaryActionButton(
+                        label: isSaved ? 'Saved' : 'Save',
+                        icon: isSaved
+                            ? Icons.bookmark
+                            : Icons.bookmark_border_outlined,
+                        enabled: !isBusy && onToggleSave != null,
+                        onPressed: onToggleSave ?? () {},
+                      ),
+                      _SecondaryActionButton(
+                        label: 'Skip / No opinion',
+                        icon: Icons.remove_circle_outline,
+                        enabled: !isBusy && onSkip != null,
+                        onPressed: onSkip ?? () {},
+                      ),
+                      if (onPrevious != null)
+                        _SecondaryActionButton(
+                          label: 'Previous',
+                          icon: Icons.arrow_back,
+                          enabled: !isBusy,
+                          onPressed: onPrevious!,
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   Text(
                     'Does this matter?',
@@ -110,7 +151,7 @@ class EditorialArticleCard extends StatelessWidget {
                   _VoteButton(
                     label: 'Critical',
                     description: 'Major public consequence',
-                    enabled: !isVoting,
+                    enabled: !isBusy,
                     color: EditorialColors.deepMaroon,
                     onPressed: () => onVote(VoteType.critical),
                   ),
@@ -118,7 +159,7 @@ class EditorialArticleCard extends StatelessWidget {
                   _VoteButton(
                     label: 'Worth Knowing',
                     description: 'Useful public context',
-                    enabled: !isVoting,
+                    enabled: !isBusy,
                     color: EditorialColors.rust,
                     onPressed: () => onVote(VoteType.worthKnowing),
                   ),
@@ -126,19 +167,19 @@ class EditorialArticleCard extends StatelessWidget {
                   _VoteButton(
                     label: 'Not Important',
                     description: 'Low public signal',
-                    enabled: !isVoting,
+                    enabled: !isBusy,
                     color: EditorialColors.mutedInk,
                     onPressed: () => onVote(VoteType.notImportant),
                   ),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
-                    child: isVoting
+                    child: isBusy
                         ? const Padding(
-                            key: ValueKey('voting'),
+                            key: ValueKey('recording'),
                             padding: EdgeInsets.only(top: 14),
                             child: Center(
                               child: Text(
-                                'Recording signal...',
+                                'Updating your edition...',
                                 style: EditorialTextStyles.metadata,
                               ),
                             ),
@@ -174,6 +215,37 @@ class EditorialArticleCard extends StatelessWidget {
     }
 
     return 'Source: ${sources.isNotEmpty ? sources.first : article.source}';
+  }
+}
+
+class _SecondaryActionButton extends StatelessWidget {
+  const _SecondaryActionButton({
+    required this.label,
+    required this.icon,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: EditorialColors.ink,
+        side: BorderSide(
+          color: EditorialColors.rust.withValues(alpha: 0.42),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+    );
   }
 }
 

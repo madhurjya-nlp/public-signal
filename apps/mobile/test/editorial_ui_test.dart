@@ -4,8 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:personal_newspaper/src/app.dart';
 import 'package:personal_newspaper/src/features/splash/public_signal_intro_screen.dart';
+import 'package:personal_newspaper/src/features/profile/profile_screen.dart';
 import 'package:personal_newspaper/src/features/rankings/rankings_repository.dart';
 import 'package:personal_newspaper/src/features/rankings/rankings_screen.dart';
+import 'package:personal_newspaper/src/features/saved/saved_notebook_screen.dart';
+import 'package:personal_newspaper/src/features/onboarding/user_repository.dart';
+import 'package:personal_newspaper/src/features/user_actions/user_actions_repository.dart';
 import 'package:personal_newspaper/src/shared/models/article.dart';
 import 'package:personal_newspaper/src/shared/ui/editorial_article_card.dart';
 import 'package:personal_newspaper/src/shared/ui/editorial_bottom_nav.dart';
@@ -112,6 +116,240 @@ void main() {
       find.text('Sources: Example Source · Second Source'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('article card exposes Save and Skip secondary actions',
+      (tester) async {
+    var saveTapped = false;
+    var skipTapped = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: EditorialArticleCard(
+              article: const Article(
+                id: '20000000-0000-0000-0000-000000000001',
+                title: 'Action hierarchy story',
+                url: 'https://example.com/story',
+                source: 'Example Source',
+                thumbnailUrl: null,
+                publishedAt: null,
+                summary: null,
+                categories: ['technology'],
+                createdAt: '2026-06-01T00:00:00.000Z',
+              ),
+              isVoting: false,
+              onVote: (_) async {},
+              onToggleSave: () => saveTapped = true,
+              onSkip: () => skipTapped = true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Skip / No opinion'), findsOneWidget);
+    expect(find.text('Critical'), findsOneWidget);
+    expect(find.text('Worth Knowing'), findsOneWidget);
+    expect(find.text('Not Important'), findsOneWidget);
+
+    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Skip / No opinion'));
+
+    expect(saveTapped, isTrue);
+    expect(skipTapped, isTrue);
+  });
+
+  testWidgets('profile shows compact dashboard without inline activity list',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          profileProvider.overrideWith(
+            (ref) async => const UserProfile(
+              id: '10000000-0000-0000-0000-000000000001',
+              interests: ['environment'],
+              suppressedTopics: [],
+            ),
+          ),
+          userAnalyticsProvider.overrideWith(
+            (ref) async => _analytics,
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: ProfileScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('CONTRIBUTION SUMMARY'), findsOneWidget);
+    expect(find.text('Open Notebook'), findsOneWidget);
+    expect(find.text('Edit interests'), findsOneWidget);
+    expect(find.text('Inline activity should stay hidden'), findsNothing);
+  });
+
+  testWidgets('tapping Critical opens voted article detail sheet',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          profileProvider.overrideWith(
+            (ref) async => const UserProfile(
+              id: '10000000-0000-0000-0000-000000000001',
+              interests: ['environment'],
+              suppressedTopics: [],
+            ),
+          ),
+          userAnalyticsProvider.overrideWith((ref) async => _analytics),
+          votedArticlesProvider('critical').overrideWith(
+            (ref) async => const VotedArticlesResponse(
+              items: [
+                VotedArticleItem(
+                  article: _detailArticle,
+                  voteType: 'critical',
+                  createdAt: '2026-06-02T00:00:00.000Z',
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: ProfileScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CRITICAL'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Critical'), findsOneWidget);
+    expect(find.text('Detail story'), findsOneWidget);
+  });
+
+  testWidgets('tapping Skipped opens skipped article detail sheet',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          profileProvider.overrideWith(
+            (ref) async => const UserProfile(
+              id: '10000000-0000-0000-0000-000000000001',
+              interests: ['environment'],
+              suppressedTopics: [],
+            ),
+          ),
+          userAnalyticsProvider.overrideWith((ref) async => _analytics),
+          skippedArticlesProvider.overrideWith(
+            (ref) async => const SkippedArticlesResponse(
+              items: [
+                SkippedArticleItem(
+                  article: _detailArticle,
+                  skippedAt: '2026-06-02T00:00:00.000Z',
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: ProfileScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SKIPPED'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Skipped / No opinion'), findsOneWidget);
+    expect(find.text('Detail story'), findsOneWidget);
+  });
+
+  testWidgets('saved notebook renders empty state', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          savedNotebookProvider.overrideWith(
+            (ref) async => const SavedArticlesResponse(items: []),
+          ),
+        ],
+        child: const MaterialApp(home: SavedNotebookScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'No saved articles yet. Save stories from the Vote tab to build your notebook.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('saved notebook groups clippings by category and date',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          savedNotebookProvider.overrideWith(
+            (ref) async => SavedArticlesResponse(
+              items: [
+                SavedArticleItem(
+                  article: _detailArticle,
+                  savedAt: DateTime.now().toIso8601String(),
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: SavedNotebookScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ENVIRONMENT'), findsOneWidget);
+    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('EDITORIAL NOTE PENDING'), findsOneWidget);
+    expect(find.text('Detail story'), findsOneWidget);
+  });
+
+  testWidgets('article card shows Saved state without hiding vote actions',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: EditorialArticleCard(
+              article: const Article(
+                id: '20000000-0000-0000-0000-000000000001',
+                title: 'Saved story',
+                url: 'https://example.com/story',
+                source: 'Example Source',
+                thumbnailUrl: null,
+                publishedAt: null,
+                summary: null,
+                categories: ['technology'],
+                createdAt: '2026-06-01T00:00:00.000Z',
+              ),
+              isVoting: false,
+              isSaved: true,
+              onVote: (_) async {},
+              onToggleSave: () {},
+              onSkip: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Critical'), findsOneWidget);
+    expect(find.text('Worth Knowing'), findsOneWidget);
+    expect(find.text('Not Important'), findsOneWidget);
   });
 
   testWidgets('app shell renders selected tab content above bottom nav',
@@ -239,3 +477,37 @@ void main() {
     expect(find.text('Feed Ready'), findsOneWidget);
   });
 }
+
+const _detailArticle = Article(
+  id: '20000000-0000-0000-0000-000000000001',
+  title: 'Detail story',
+  url: 'https://example.com/detail',
+  source: 'Example Source',
+  thumbnailUrl: null,
+  publishedAt: null,
+  summary: 'Summary',
+  categories: ['environment'],
+  createdAt: '2026-06-02T00:00:00.000Z',
+);
+
+const _analytics = UserAnalytics(
+  totalVotes: 1,
+  criticalVotes: 1,
+  worthKnowingVotes: 0,
+  notImportantVotes: 0,
+  skippedArticles: 1,
+  savedArticles: 1,
+  uniqueSourcesVoted: 1,
+  uniqueStoryGroupsVoted: 1,
+  topInterests: [],
+  recentActivity: [
+    RecentActivity(
+      type: 'vote',
+      voteType: 'critical',
+      articleId: '20000000-0000-0000-0000-000000000001',
+      storyTitle: 'Inline activity should stay hidden',
+      source: 'Example Source',
+      createdAt: '2026-06-02T00:00:00.000Z',
+    ),
+  ],
+);

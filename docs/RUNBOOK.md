@@ -122,6 +122,33 @@ The command is idempotent: rerunning it does not duplicate article rows or
 story-group links. The generated rows are fake local test data, not production
 content.
 
+## Future Saved Article Processing
+
+Saved articles are stored as user library actions only. They do not affect
+rankings and they do not trigger AI processing today.
+
+A later editorial pipeline can use saved articles as inputs after source and
+rights review:
+
+```text
+saved article -> source review -> extract text -> editorial brief -> grammar/style rewrite -> user-facing AI brief
+```
+
+That pipeline is not implemented in the current MVP.
+
+## User Action UX V0
+
+Public Signal keeps three user actions separate:
+
+- Votes (`critical`, `worth_knowing`, `not_important`) drive rankings.
+- Save is a private library action and does not affect rankings.
+- Skip is a private no-opinion action and does not affect rankings.
+
+Profile analytics and action detail panels are private to the authenticated
+user. The Saved Notebook groups saved clippings for later reading and can
+become a future input surface for editorial or AI processing after source and
+rights review. No AI processing is implemented today.
+
 ## Common Errors
 
 ### `SUPABASE_URL does not exist`

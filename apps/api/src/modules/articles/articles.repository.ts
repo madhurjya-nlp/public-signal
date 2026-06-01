@@ -79,7 +79,10 @@ export class ArticlesRepository {
     interests: string[];
     limit?: number;
   }): Promise<PublicSignalArticle[]> {
-    const votedArticleIds = await this.findVotedArticleIds(params.userId);
+    const [votedArticleIds, skippedArticleIds] = await Promise.all([
+      this.findVotedArticleIds(params.userId),
+      this.findSkippedArticleIds(params.userId),
+    ]);
     const { data, error } = await this.articleQuery()
       .order('published_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
@@ -95,7 +98,10 @@ export class ArticlesRepository {
     const articles = await this.hydrateStoryMetadata((data ?? []).map(mapArticle));
 
     return articles
-      .filter((article) => !votedArticleIds.has(article.id))
+      .filter(
+        (article) =>
+          !votedArticleIds.has(article.id) && !skippedArticleIds.has(article.id),
+      )
       .sort((a, b) => {
         const aPriority = hasInterestMatch(a, interests) ? 0 : 1;
         const bPriority = hasInterestMatch(b, interests) ? 0 : 1;
@@ -271,6 +277,17 @@ export class ArticlesRepository {
   private async findVotedArticleIds(userId: string): Promise<Set<string>> {
     const { data, error } = await this.supabase.admin
       .from('article_votes')
+      .select('article_id')
+      .eq('user_id', userId)
+      .returns<Array<{ article_id: string }>>();
+
+    assertSupabaseSuccess(error);
+    return new Set((data ?? []).map((row) => row.article_id));
+  }
+
+  private async findSkippedArticleIds(userId: string): Promise<Set<string>> {
+    const { data, error } = await this.supabase.admin
+      .from('article_skips')
       .select('article_id')
       .eq('user_id', userId)
       .returns<Array<{ article_id: string }>>();

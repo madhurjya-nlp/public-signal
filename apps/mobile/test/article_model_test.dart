@@ -67,4 +67,19 @@ void main() {
     expect(article.storyTitle, 'Standalone headline');
     expect(article.relatedSources, isEmpty);
   });
+
+  test('Article.fromJson parses optional saved and skipped UI state', () {
+    final article = Article.fromJson({
+      'id': '20000000-0000-0000-0000-000000000001',
+      'title': 'Saved headline',
+      'url': 'https://example.com/story',
+      'source': 'Example Source',
+      'categories': ['technology'],
+      'is_saved': true,
+      'has_skipped': true,
+    });
+
+    expect(article.isSaved, isTrue);
+    expect(article.hasSkipped, isTrue);
+  });
 }

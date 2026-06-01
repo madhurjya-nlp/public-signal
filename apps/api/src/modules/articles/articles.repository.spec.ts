@@ -18,7 +18,7 @@ describe('ArticlesRepository', () => {
     const repository = new ArticlesRepository({
       admin: {
         from: jest.fn((table: string) => {
-          if (table === 'article_votes') {
+          if (table === 'article_votes' || table === 'article_skips') {
             return {
               select: jest.fn().mockReturnThis(),
               eq: jest.fn().mockReturnThis(),
@@ -209,7 +209,7 @@ describe('ArticlesRepository', () => {
     const repository = new ArticlesRepository({
       admin: {
         from: jest.fn((table: string) => {
-          if (table === 'article_votes') {
+          if (table === 'article_votes' || table === 'article_skips') {
             return {
               select: jest.fn().mockReturnThis(),
               eq: jest.fn().mockReturnThis(),
@@ -262,5 +262,79 @@ describe('ArticlesRepository', () => {
         ],
       }),
     );
+  });
+
+  it('excludes skipped articles from the feed', async () => {
+    const repository = new ArticlesRepository({
+      admin: {
+        from: jest.fn((table: string) => {
+          if (table === 'article_votes') {
+            return {
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnThis(),
+              returns: jest.fn().mockResolvedValue({ data: [], error: null }),
+            };
+          }
+          if (table === 'article_skips') {
+            return {
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnThis(),
+              returns: jest.fn().mockResolvedValue({
+                data: [{ article_id: articleRow.id }],
+                error: null,
+              }),
+            };
+          }
+
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            returns: jest.fn().mockResolvedValue({
+              data: [articleRow],
+              error: null,
+            }),
+          };
+        }),
+      },
+    } as never);
+
+    await expect(
+      repository.findFeedForUser({
+        userId: '10000000-0000-0000-0000-000000000001',
+        interests: ['technology'],
+      }),
+    ).resolves.toEqual([]);
+  });
+
+  it('does not exclude saved-only articles from the feed', async () => {
+    const from = jest.fn((table: string) => {
+      if (table === 'article_votes' || table === 'article_skips') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          returns: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      }
+
+      return {
+        select: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        returns: jest.fn().mockResolvedValue({
+          data: [articleRow],
+          error: null,
+        }),
+      };
+    });
+    const repository = new ArticlesRepository({ admin: { from } } as never);
+
+    const items = await repository.findFeedForUser({
+      userId: '10000000-0000-0000-0000-000000000001',
+      interests: ['technology'],
+    });
+
+    expect(items).toHaveLength(1);
+    expect(from).not.toHaveBeenCalledWith('saved_articles');
   });
 });
