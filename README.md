@@ -93,6 +93,9 @@ GitHub Actions runs on every push to `main` and every pull request targeting `ma
 Production and staging backend flags, CORS requirements, and Flutter build-time
 environment values are documented in `docs/RUNBOOK.md`.
 
+Staging deployment setup for Supabase Cloud, Render, and Flutter Web is
+documented in `docs/deployment-staging.md`.
+
 ## Architecture Principles
 
 - The mobile app never talks directly to LLM providers.

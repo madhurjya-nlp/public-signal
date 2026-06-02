@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: public-signal-api-staging
+    env: node
+    rootDir: .
+    buildCommand: npm ci && npm run build
+    startCommand: npm --workspace @personal-newspaper/api run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RSS_POLLING_ENABLED
+        value: "false"
+      - key: MANUAL_INGESTION_ENABLED
+        value: "false"
+      - key: SEARCH_ENABLED
+        value: "false"
+      - key: ASSISTANT_ENABLED
+        value: "false"
